@@ -80,6 +80,7 @@ class Villager(object):
         """
         self._decide_for_kill(kill_reasons)
         return self._kill_vote()
+    
 
 class WerewolfAI(Villager):
     """
