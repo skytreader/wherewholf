@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from exceptions import GamePrivilegeError
+
 class NotedVillagers:
     """
     The official role strings used for this game.
@@ -72,3 +74,5 @@ class GameMaster(object):
     def kill_villager(self, killer, victim):
         if NotedVillagers.can_kill(killer.role):
             self.__game_environment.kill_villager(victim)
+        else:
+            raise GamePrivilegeError(killer)

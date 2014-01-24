@@ -81,6 +81,8 @@ class Villager(object):
         self._decide_for_kill(kill_reasons)
         return self._kill_vote()
     
+    def request_kill(self, game_master, villager):
+        game_master.kill_villager(self, villager)
 
 class WerewolfAI(Villager):
     """
