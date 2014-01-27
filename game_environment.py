@@ -10,22 +10,22 @@ class NotedVillagers:
     SEER = "seer"
     WITCH = "witch"
     
-    CAN_KILL_INDEX = 1
-    CAN_CHECK_INDEX = 2
-    CAN_GUARD_INDEX = 3
+    CAN_KILL_INDEX = 0
+    CAN_CHECK_INDEX = 1
+    CAN_GUARD_INDEX = 2
     PRIVILEGE_TABLE = {}
     PRIVILEGE_TABLE[WEREWOLF] = (True, False, False)
     PRIVILEGE_TABLE[SEER] = (False, True, False)
     PRIVILEGE_TABLE[WITCH] = (True, False, True)
 
     def can_kill(rolestring):
-        return PRIVILEGE_TABLE[rolestring][CAN_KILL_INDEX]
+        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_KILL_INDEX]
 
     def can_check(rolestring):
-        return PRIVILEGE_TABLE[rolestring][CAN_CHECK_INDEX]
+        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_CHECK_INDEX]
     
     def can_guard(rolestring):
-        return PRIVELEGE_TABLE[rolestring][CAN_GUARD_INDEX]
+        return NotedVillagers.PRIVELEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
 
 # FIXME Ensure that rogue villager implementations cannot just kill off
 # random villagers. Maybe, implement a privileges table that will list the
