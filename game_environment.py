@@ -53,7 +53,7 @@ class GameEnvironment(object):
         close it, there is no turning back.
         """
         if self._village_open:  
-            self._village_open = is_open:
+            self._village_open = is_open
         else:
             raise VillageClosedError("trying to re-open a closed village")
     
@@ -64,7 +64,7 @@ class GameEnvironment(object):
     def register_villager(self, villager):
         if self.village_open:
             self.villager_set.add(villager)
-            self.villager_names[villager] = villager.name
+            self.villager_names.add(villager.name)
             self.werewolf_kill_vote[villager] = 0
         else:
             raise VillageClosedError("new players are trying to get in a closed village")
