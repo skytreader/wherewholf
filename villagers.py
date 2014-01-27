@@ -94,7 +94,7 @@ class WerewolfAI(Villager):
     
     def __init__(self, name):
         # Atta mean killing machine!
-        super(Villager, self).__init__(name, NotedVillagers.WEREWOLF)
+        super(WerewolfAI, self).__init__(name, NotedVillagers.WEREWOLF)
     
     def ability(self, game_environment):
         """
@@ -108,7 +108,7 @@ class WerewolfAI(Villager):
 
 class SeerAI(Villager):
     def __init__(self, name):
-        super(Villager, self).__init__(name, NotedVillagers.SEER)
+        super(SeerAI, self).__init__(name, NotedVillagers.SEER)
         self.__villager_perception = {}
 
     def ability(self, game_environment):
@@ -122,7 +122,7 @@ class SeerAI(Villager):
 class WitchAI(Villager):
     
     def __init__(self, name):
-        super(Villager, self).__init__(name, NotedVillagers.WITCH)
+        super(WitchAI, self).__init__(name, NotedVillagers.WITCH)
         # The following variables hold _True_ if the potions can still be used.
         self.can_poison = True
         self.can_potion = True
