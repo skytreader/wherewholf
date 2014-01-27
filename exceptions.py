@@ -11,3 +11,20 @@ class GamePrivilegeError(Exception):
 
     def __str__(self):
         return repr(self.character) + " does not have sufficient privileges for that action."
+
+class VillageClosedError(Exception):
+    """
+    This error is thrown if a set-up change is attempted on a game in-progress.
+    Example of possible set-up changes are:
+        - A new villager is introduced,
+        - ...more
+    """
+
+    def __init__(self, change):
+        """
+        change is a string specifying the change that triggered this exception.
+        """
+        self.change = change
+
+    def __str__(self):
+        return "Invalid state-change: " + self.change

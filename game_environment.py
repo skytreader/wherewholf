@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from exceptions import GamePrivilegeError
+from exceptions import GamePrivilegeError, VillageClosedError
 
 class NotedVillagers:
     """
@@ -38,15 +38,36 @@ class GameEnvironment(object):
         self.village_kill_vote = {}
         # Will hold the reasoning of players on who to kill
         self.kill_reasons = []
+
+        self._werewolf_count = 0
+        self._village_open = True
+
+    @property
+    def village_open(self):
+        return self._village_open
+
+    @village_open.setter
+    def village_open(self, is_open):
+        """
+        You can only mess with the village's status if it is open. Once you
+        close it, there is no turning back.
+        """
+        if self._village_open:  
+            self._village_open = is_open:
+        else:
+            raise VillageClosedError("trying to re-open a closed village")
     
     @property
     def villager_list(self):
         return self.villager_set.iterkeys()
 
     def register_villager(self, villager):
-        self.villager_set.add(villager)
-        self.villager_names[villager] = villager.name
-        self.werewolf_kill_vote[villager] = 0
+        if self.village_open:
+            self.villager_set.add(villager)
+            self.villager_names[villager] = villager.name
+            self.werewolf_kill_vote[villager] = 0
+        else:
+            raise VillageClosedError("new players are trying to get in a closed village")
 
     def kill_villager(self, villager):
         if not villager.health_guard:
