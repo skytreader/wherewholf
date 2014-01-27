@@ -27,10 +27,6 @@ class NotedVillagers:
     def can_guard(rolestring):
         return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
 
-# FIXME Ensure that rogue villager implementations cannot just kill off
-# random villagers. Maybe, implement a privileges table that will list the
-# privileges (kill, check, etc) of various noted villagers.
-
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
 class GameEnvironment(object):
@@ -76,3 +72,5 @@ class GameMaster(object):
             self.__game_environment.kill_villager(victim)
         else:
             raise GamePrivilegeError(killer)
+    
+    def register_villagers
