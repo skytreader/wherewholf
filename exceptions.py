@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-class GamePrivelegeError(Exception):
+class GamePrivilegeError(Exception):
     """
     This error is thrown if a game character attempts an action for which the
     character has no sufficient privilege.
