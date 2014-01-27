@@ -73,4 +73,13 @@ class GameMaster(object):
         else:
             raise GamePrivilegeError(killer)
     
-    def register_villagers
+    def register_villagers(self, villager):
+        # Pass through function
+        self.__game_environment.register_villager(villager)
+    
+    def play(self):
+        """
+        GameMaster will continue interacting with the GameEnvironment and the
+        Villagers until we reach end game.
+        """
+        pass
