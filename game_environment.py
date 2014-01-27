@@ -25,7 +25,7 @@ class NotedVillagers:
         return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_CHECK_INDEX]
     
     def can_guard(rolestring):
-        return NotedVillagers.PRIVELEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
+        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
 
 # FIXME Ensure that rogue villager implementations cannot just kill off
 # random villagers. Maybe, implement a privileges table that will list the
