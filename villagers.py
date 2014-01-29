@@ -6,7 +6,7 @@ import random
 
 class Villager(object):
     
-    def __init__(self, name, role):
+    def __init__(self, name, role="villager"):
         self._name = name
         self._role = role
         self._is_alive = True
@@ -83,6 +83,15 @@ class Villager(object):
     
     def request_kill(self, game_master, villager):
         game_master.kill_villager(self, villager)
+
+# TODO Implementations
+class PlainVillagerAI(Villager):
+    """
+    Werewolf food villager.
+    """
+
+    def __init__(self, name):
+        super(PlainVillagerAI, self).__init__(name)
 
 class WerewolfAI(Villager):
     """

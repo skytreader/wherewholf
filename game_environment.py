@@ -88,11 +88,40 @@ class GameMaster(object):
     def __init__(self, game_environment):
         self.__game_environment = game_environment
     
+    # FIXME Still not very foolproof. As an implementation, I can hold an instance
+    # of a villager that has the privileges I want.
+    # Solution idea: Decouple villager identity from function. GameMaster will map
+    # the privileges of every villager.
+    # Idea! Makes for a good game character. "Hostage taker" or something...
     def kill_villager(self, killer, victim):
+        """
+        If killer has the sufficient permission, kill the victim. Otherwise, will
+        raise a GamePrivilegeError.
+        """
         if NotedVillagers.can_kill(killer.role):
             self.__game_environment.kill_villager(victim)
         else:
             raise GamePrivilegeError(killer)
+    
+    def check_villager(self, checker, victim):
+        """
+        If checker has the sufficient permission, return the role string of
+        victim. Otherwise, will raise a GamePrivilegeError.
+        """
+        if NotedVillagers.can_kill(checker.role):
+            return victim.role
+        else:
+            raise GamePrivilegeError(checker)
+
+    def guard_villager(self, guardian, taker):
+        """
+        If guardian has the sufficient permission, set taker's health_guard
+        to true. Otherwise, will raise a GamePrivilegeError.
+        """
+        if NotedVillagers.can_guard(guardian.role):
+            taker.health_guard = True
+        else:
+            raise GamePrivilegeError(guardian)
     
     def register_villagers(self, villager):
         # Pass through function
