@@ -26,10 +26,15 @@ class CharacterPrivileges(unittest.TestCase):
 
 class GameEnvironmentTests(unittest.TestCase):
     
+    def setUp(self):
+        self.lupin = WerewolfAI("Lupin")
+        self.trelawney = SeerAI("Trelawney")
+        self.bellatrix = SeerAI("Bellatrix")
+
     def test_game_states(self):
         # Create a GameEnvironment
         test_village = GameEnvironment()
-        test_crew = (WerewolfAI("Lupin"), SeerAI("Trelawney"), WitchAI("Bellatrix"))
+        test_crew = (self.lupin, self.trelawney, self.bellatrix)
 
         for crew in test_crew:
             test_village.register_villager(crew)
