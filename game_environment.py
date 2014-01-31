@@ -9,23 +9,6 @@ class NotedVillagers:
     WEREWOLF = "werewolf"
     SEER = "seer"
     WITCH = "witch"
-    
-    CAN_KILL_INDEX = 0
-    CAN_CHECK_INDEX = 1
-    CAN_GUARD_INDEX = 2
-    PRIVILEGE_TABLE = {}
-    PRIVILEGE_TABLE[WEREWOLF] = (True, False, False)
-    PRIVILEGE_TABLE[SEER] = (False, True, False)
-    PRIVILEGE_TABLE[WITCH] = (True, False, True)
-
-    def can_kill(rolestring):
-        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_KILL_INDEX]
-
-    def can_check(rolestring):
-        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_CHECK_INDEX]
-    
-    def can_guard(rolestring):
-        return NotedVillagers.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
 
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
@@ -78,6 +61,32 @@ class GameEnvironment(object):
         for villager in villager_list:
             self.werewolf_kill_vote[villager] = 0
             self.village_kill_vote[villager] = 0
+
+class IdentityMapper(object):
+    """
+    Given a villager's role + name, this class takes note of the privileges
+    assigned to a villager.
+    """
+
+    CAN_KILL_INDEX = 0
+    CAN_CHECK_INDEX = 1
+    CAN_GUARD_INDEX = 2
+    PRIVILEGE_TABLE = {}
+    PRIVILEGE_TABLE[NotedVillagers.WEREWOLF] = (True, False, False)
+    PRIVILEGE_TABLE[NotedVillagers.SEER] = (False, True, False)
+    PRIVILEGE_TABLE[NotedVillagers.WITCH] = (True, False, True)
+
+    def __init__(self):
+        self.__character_map = {}
+
+    def can_kill(rolestring):
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_KILL_INDEX]
+
+    def can_check(rolestring):
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_CHECK_INDEX]
+    
+    def can_guard(rolestring):
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
 
 class GameMaster(object):
     """
