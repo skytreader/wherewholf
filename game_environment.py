@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from errors import GamePrivilegeError, VillageClosedError
+from errors import GamePrivilegeError, RegistrationError, VillageClosedError
 
 class NotedVillagers:
     """
@@ -88,7 +88,12 @@ class IdentityMapper(object):
         self.__character_map = {}
 
     def register_identity(self, villager):
-        pass
+        if IdentityMapper.CHARACTER_SEPARATOR in villager.name or \
+          IdentityMapper.CHARACTER_SEPARATOR in villager.role:
+            raise RegistrationError(villager)
+
+        registry_key = "".join((villager.name, IdentityMapper.CHARACTER_SEPARATOR, villager.role))
+        self.__character_map[registry_key] = IdentityMapper.PRIVILEGE_TABLE[villager.role]
 
     @staticmethod
     def can_kill(rolestring):
