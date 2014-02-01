@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from exceptions import GamePrivilegeError, VillageClosedError
+from errors import GamePrivilegeError, VillageClosedError
 
 class NotedVillagers:
     """
@@ -66,6 +66,12 @@ class IdentityMapper(object):
     """
     Given a villager's role + name, this class takes note of the privileges
     assigned to a villager.
+
+    Assumptions:
+        - For all villager instances that will be involved in the game, the
+        combination name + rolestring is unique.
+        - No rolestring or villager name will have the record separator
+        character (ascii code 30).
     """
 
     CAN_KILL_INDEX = 0
@@ -76,8 +82,13 @@ class IdentityMapper(object):
     PRIVILEGE_TABLE[NotedVillagers.SEER] = (False, True, False)
     PRIVILEGE_TABLE[NotedVillagers.WITCH] = (True, False, True)
 
+    CHARACTER_SEPARATOR = chr(30)
+
     def __init__(self):
         self.__character_map = {}
+
+    def register_identity(self, villager):
+        pass
 
     def can_kill(rolestring):
         return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_KILL_INDEX]

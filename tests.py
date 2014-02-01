@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from exceptions import VillageClosedError
+from errors import VillageClosedError
 from game_environment import NotedVillagers, GameEnvironment
 from villagers import WerewolfAI, SeerAI, WitchAI
 
@@ -23,6 +23,23 @@ class CharacterPrivileges(unittest.TestCase):
         self.assertTrue(NotedVillagers.can_kill(NotedVillagers.WITCH))
         self.assertFalse(NotedVillagers.can_check(NotedVillagers.WITCH))
         self.assertTrue(NotedVillagers.can_guard(NotedVillagers.WITCH))
+
+class IdentityMapperTests(unittest.TestCase):
+    
+    def test_villager_equality(self):
+        """
+        No matter what happens, two different villager instances (even with the
+        same name and role), should not hash to the same dictionary slot for the
+        Python implementation on which this code will run.
+        """
+        jango = WerewolfAI("Jango")
+        clone_trooper = WerewolfAI("Fett")
+
+        dummy_map = {}
+        dummy_map[jango] = "Clone"
+        dummy_map[clone_trooper] = "Trooper"
+
+        self.assertNotEqual(dummy_map[jango], dummy_map[clone_trooper])
 
 class GameEnvironmentTests(unittest.TestCase):
     
