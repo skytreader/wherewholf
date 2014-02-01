@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from errors import VillageClosedError
-from game_environment import NotedVillagers, GameEnvironment
+from game_environment import NotedVillagers, GameEnvironment, IdentityMapper
 from villagers import WerewolfAI, SeerAI, WitchAI
 
 import unittest
@@ -10,19 +10,19 @@ class CharacterPrivileges(unittest.TestCase):
     
     def test_privileges(self):
         # Werewolf tests
-        self.assertTrue(NotedVillagers.can_kill(NotedVillagers.WEREWOLF))
-        self.assertFalse(NotedVillagers.can_check(NotedVillagers.WEREWOLF))
-        self.assertFalse(NotedVillagers.can_guard(NotedVillagers.WEREWOLF))
+        self.assertTrue(IdentityMapper.can_kill(NotedVillagers.WEREWOLF))
+        self.assertFalse(IdentityMapper.can_check(NotedVillagers.WEREWOLF))
+        self.assertFalse(IdentityMapper.can_guard(NotedVillagers.WEREWOLF))
         
         # Seer tests
-        self.assertFalse(NotedVillagers.can_kill(NotedVillagers.SEER))
-        self.assertTrue(NotedVillagers.can_check(NotedVillagers.SEER))
-        self.assertFalse(NotedVillagers.can_guard(NotedVillagers.SEER))
+        self.assertFalse(IdentityMapper.can_kill(NotedVillagers.SEER))
+        self.assertTrue(IdentityMapper.can_check(NotedVillagers.SEER))
+        self.assertFalse(IdentityMapper.can_guard(NotedVillagers.SEER))
         
         #Witch tests
-        self.assertTrue(NotedVillagers.can_kill(NotedVillagers.WITCH))
-        self.assertFalse(NotedVillagers.can_check(NotedVillagers.WITCH))
-        self.assertTrue(NotedVillagers.can_guard(NotedVillagers.WITCH))
+        self.assertTrue(IdentityMapper.can_kill(NotedVillagers.WITCH))
+        self.assertFalse(IdentityMapper.can_check(NotedVillagers.WITCH))
+        self.assertTrue(IdentityMapper.can_guard(NotedVillagers.WITCH))
 
 class IdentityMapperTests(unittest.TestCase):
     

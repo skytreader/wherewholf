@@ -90,14 +90,17 @@ class IdentityMapper(object):
     def register_identity(self, villager):
         pass
 
+    @staticmethod
     def can_kill(rolestring):
-        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_KILL_INDEX]
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][IdentityMapper.CAN_KILL_INDEX]
 
+    @staticmethod
     def can_check(rolestring):
-        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_CHECK_INDEX]
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][IdentityMapper.CAN_CHECK_INDEX]
     
+    @staticmethod
     def can_guard(rolestring):
-        return IdentityMapper.PRIVILEGE_TABLE[rolestring][NotedVillagers.CAN_GUARD_INDEX]
+        return IdentityMapper.PRIVILEGE_TABLE[rolestring][IdentityMapper.CAN_GUARD_INDEX]
 
 class GameMaster(object):
     """
