@@ -19,10 +19,23 @@ class RegistrationError(Exception):
     """
 
     def __init__(self, villager):
-        self.vilager = villager
+        self.villager = villager
 
     def __str__(self):
         return "Error registering villager: " + str(self.villager.role) + " " + \
+          str(self.villager.name)
+
+class IdentityError(Exception):
+    """
+    This error is thrown whenever we have trouble validating the identity of
+    any given villager.
+    """
+
+    def __init__(self, villager):
+        self.villager = villager
+
+    def __str__(self):
+        return "Unable to verify identity of: " + str(self.villager.role) + " " + \
           str(self.villager.name)
 
 class VillageClosedError(Exception):

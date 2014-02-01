@@ -45,17 +45,25 @@ class IdentityMapperTests(unittest.TestCase):
         self.assertNotEqual(dummy_map[jango], dummy_map[clone_trooper])
 
     def test_registration(self):
-        dirty_name = "sauron" + IdentityMapper.CHARACTER_SEPARATOR
+        # You shall not pass (the registration, throw exception)!
+        dirty_name = "sauron" + IdentityMapper.RECORD_SEPARATOR
         dirty_name_villager = Villager(dirty_name)
 
         self.assertRaises(RegistrationError, self.id_accountant.register_identity,\
           dirty_name_villager)
 
-        dirty_job = IdentityMapper.CHARACTER_SEPARATOR + "balrog"
+        dirty_job = IdentityMapper.RECORD_SEPARATOR + "balrog"
         dirty_job_villager = Villager("sauron", dirty_job)
 
         self.assertRaises(RegistrationError, self.id_accountant.register_identity,\
           dirty_job_villager)
+
+        # Ordinary cases
+        # Test registration of all roles and ensure that they get the proper privileges
+        normal_werewolf = WerewolfAI("fenrir")
+        self.id_accountant.register_identity(normal_werewolf)
+        self.assertEqual(self.id_accountant.get_identity(normal_werewolf), \
+          IdentityMapper.PRIVILEGE_TABLE[NotedVillagers.WEREWOLF])
 
 class GameEnvironmentTests(unittest.TestCase):
     

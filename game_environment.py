@@ -82,18 +82,36 @@ class IdentityMapper(object):
     PRIVILEGE_TABLE[NotedVillagers.SEER] = (False, True, False)
     PRIVILEGE_TABLE[NotedVillagers.WITCH] = (True, False, True)
 
-    CHARACTER_SEPARATOR = chr(30)
+    RECORD_SEPARATOR = chr(30)
 
     def __init__(self):
         self.__character_map = {}
 
+    def __compute_registry_key(self, villager):
+        """
+        A villager's registry key is made up of the following:
+            - The villager's name
+            - The villager's role
+            - The villager's id (memory address/hash)
+
+        What's stopping us from using the plain hash again? :|
+        """
+        return "".join((villager.name, IdentityMapper.RECORD_SEPARATOR, villager.role,\
+          str(id(villager))))
+
     def register_identity(self, villager):
-        if IdentityMapper.CHARACTER_SEPARATOR in villager.name or \
-          IdentityMapper.CHARACTER_SEPARATOR in villager.role:
+        if IdentityMapper.RECORD_SEPARATOR in villager.name or \
+          IdentityMapper.RECORD_SEPARATOR in villager.role:
             raise RegistrationError(villager)
 
-        registry_key = "".join((villager.name, IdentityMapper.CHARACTER_SEPARATOR, villager.role))
+        registry_key = self.__compute_registry_key(villager)
+        # FIXME If the villager's role string is not mapped, this will throw an
+        # exception. Maybe, catch it and throw a RegistrationError?
         self.__character_map[registry_key] = IdentityMapper.PRIVILEGE_TABLE[villager.role]
+
+    def get_identity(self, villager):
+        registry_key = self.__compute_registry_key(villager)
+        return self.__character_map[registry_key]
 
     @staticmethod
     def can_kill(rolestring):
