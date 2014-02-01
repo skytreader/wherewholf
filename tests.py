@@ -33,7 +33,7 @@ class IdentityMapperTests(unittest.TestCase):
         Python implementation on which this code will run.
         """
         jango = WerewolfAI("Jango")
-        clone_trooper = WerewolfAI("Fett")
+        clone_trooper = WerewolfAI("Jango")
 
         dummy_map = {}
         dummy_map[jango] = "Clone"
