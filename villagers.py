@@ -99,10 +99,17 @@ class HiveVillager(Villager):
 
     def __init__(self, hiverole):
         super(HiveVillager, self).__init__(hiverole, HiveVillager.HIVEROLE)
+        self.__members = []
 
     @property
     def label(self):
         return self.role
+
+    def add_member(self, villager):
+        self.__members.insert(0, villager)
+
+    def is_member(self, villager):
+        return villager in self.__members
 
 # TODO Implementations
 class PlainVillagerAI(Villager):
