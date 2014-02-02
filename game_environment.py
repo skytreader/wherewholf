@@ -13,6 +13,13 @@ class NotedVillagers:
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
 class GameEnvironment(object):
+    """
+    The `GameEnvironment` is responsible for noting the variables involved in a
+    game. By itself, no game play happens. The GameEnvironment is oblivious to
+    the rules of the game. It just knows what game resources are available.
+
+    For game play to happen, we need a `GameMaster` (as below).
+    """
     
     def __init__(self):
         self.villager_set = set()
@@ -65,8 +72,6 @@ class GameEnvironment(object):
 class IdentityMapper(object):
     """
     Given a villager's role + name, this class takes note of the privileges
-    assigned to a villager.
-
     Assumptions:
         - For all villager instances that will be involved in the game, the
         combination name + rolestring is unique.
@@ -112,6 +117,29 @@ class IdentityMapper(object):
     def get_identity(self, villager):
         registry_key = self.__compute_registry_key(villager)
         return self.__character_map[registry_key]
+    
+    # As opposed to can_{kill, check, guard} methods below
+    def verify_kill(self, villager):
+        """
+        Given a villager, verify whether that villager can kill another villager.
+        """
+        identity = self.get_identity(villager)
+        return identity[IdentityMapper.CAN_KILL_INDEX]
+
+    def verify_check(self, villager):
+        """
+        Given a villager, verify whether that villager can check the role of
+        another villager.
+        """
+        identity = self.get_identity(villager)
+        return identity[IdentityMapper.CAN_CHECK_INDEX]
+
+    def verify_guard(self, villager):
+        """
+        Given a villager, verify whether a villager can guard another villager.
+        """
+        identity = self.get_identity(villager)
+        return identity[IdentityMapper.CAN_GUARD_INDEX]
 
     @staticmethod
     def can_kill(rolestring):
@@ -127,9 +155,15 @@ class IdentityMapper(object):
 
 class GameMaster(object):
     """
+    The `GameMaster` is responsible for managing the current game session. The
+    `GameMaster` enforces the rules of the game. Utilization of game resources
+    may vary depending on the `GameMaster` implementation that manages a game
+    session.
+
     Villagers should not interact directly with the GameEnvironment. All
-    interactions with the GameEnvironment should go through the GameMaster.
+    interactions with the `GameEnvironment` should go through the `GameMaster`.
     """
+    # Do we still need GameEnvironment with GameMaster? :\
     
     def __init__(self, game_environment):
         self.__game_environment = game_environment
