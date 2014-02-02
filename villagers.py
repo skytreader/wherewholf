@@ -36,12 +36,13 @@ class Villager(object):
 
         return chosen
 
-    def ability(self, game_environment):
+    def ability(self, game_master):
         """
         Apply this villager's ability to another villager's. Some villagers may
         not have any ability at all (common villagers).
 
-        The argument is the game_environment. (TODO Define game_environment).
+        The argument is a game_master instance (usually, the game_master handling
+        the game where this instance is involved.
         """
         pass
     
@@ -105,27 +106,27 @@ class WerewolfAI(Villager):
         # Atta mean killing machine!
         super(WerewolfAI, self).__init__(name, NotedVillagers.WEREWOLF)
     
-    def ability(self, game_environment):
+    def ability(self, game_master):
         """
         A werewolf's ability is to choose a villager and vote for its death.
         There should be at least two werewolves in the game.
         """
         # What if werewolf wants to offer self in the name of deception?
-        villager = self.selfless_select(game_environment.villager_list)
+        villager = self.selfless_select(game_master.villager_list)
 
-        game_environment.werewolf_kill_vote[villager] += 1
+        game_master.werewolf_kill_vote[villager] += 1
 
 class SeerAI(Villager):
     def __init__(self, name):
         super(SeerAI, self).__init__(name, NotedVillagers.SEER)
         self.__villager_perception = {}
 
-    def ability(self, game_environment):
+    def ability(self, game_master):
         """
         A seer can peek into a villager's role and use that information for
         votation later.
         """
-        villager = self.selfless_select(game_environment.villager_list)
+        villager = self.selfless_select(game_master.villager_list)
         self.__villager_perception[villager.name] = villager.role
 
 class WitchAI(Villager):
@@ -136,7 +137,7 @@ class WitchAI(Villager):
         self.can_poison = True
         self.can_potion = True
 
-    def ability(self, game_environment):
+    def ability(self, game_master):
         """
         The witch has a poison and a potion. At any turn, the witch may decide
         to use one of these. If the witch has used both, the witch passes on the
@@ -149,10 +150,10 @@ class WitchAI(Villager):
             use_poison = random.choice([True, False])
             
             if use_poison and self.can_poison:
-                suspect = self.selfless_select(game_environment.villager_list)
-                game_environment.kill_villager(suspect)
+                suspect = self.selfless_select(game_master.villager_list)
+                game_master.kill_villager(suspect)
                 self.can_poison = False
             elif self.can_potion:
-                lucky_villager = random.choice(game_environment.villager_list)
+                lucky_villager = random.choice(game_master.villager_list)
                 lucky_villager.health_guard = True
                 self.can_potion = False

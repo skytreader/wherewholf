@@ -162,11 +162,22 @@ class GameMaster(object):
 
     Villagers should not interact directly with the GameEnvironment. All
     interactions with the `GameEnvironment` should go through the `GameMaster`.
+    Because of this, `GameMaster` will have a lot of "pass-through" properties
+    to `GameEnvironment`.
     """
-    # Do we still need GameEnvironment with GameMaster? :\
     
     def __init__(self, game_environment):
         self.__game_environment = game_environment
+
+    # Pass-through properties
+
+    @property
+    def villager_list(self):
+        return self.__game_environment.villager_list
+
+    @property
+    def werewolf_kill_vote(self):
+        return self.__game_environment.werewolf_kill_vote
     
     def kill_villager(self, killer, victim):
         """
