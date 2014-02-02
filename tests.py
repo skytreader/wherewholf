@@ -2,7 +2,7 @@
 
 from errors import RegistrationError, VillageClosedError
 from game_environment import NotedVillagers, GameEnvironment, IdentityMapper
-from villagers import Villager, WerewolfAI, SeerAI, WitchAI
+from villagers import HiveVillager, Villager, WerewolfAI, SeerAI, WitchAI
 
 import unittest
 
@@ -23,6 +23,12 @@ class CharacterPrivileges(unittest.TestCase):
         self.assertTrue(IdentityMapper.can_kill(NotedVillagers.WITCH))
         self.assertFalse(IdentityMapper.can_check(NotedVillagers.WITCH))
         self.assertTrue(IdentityMapper.can_guard(NotedVillagers.WITCH))
+
+class HiveTest(unittest.TestCase):
+    
+    def test_rolelabel(self):
+        beehive = HiveVillager("bee")
+        self.assertEqual(beehive.label, beehive.role)
 
 class IdentityMapperTests(unittest.TestCase):
 

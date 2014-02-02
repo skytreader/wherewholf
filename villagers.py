@@ -85,6 +85,25 @@ class Villager(object):
     def request_kill(self, game_master, villager):
         game_master.kill_villager(self, villager)
 
+class HiveVillager(Villager):
+    """
+    This is not actually a villager. This structure is meant to aggregate
+    decisions from various villagers and enact that decision based on some
+    metric (simplest would be simple majority voting).
+
+    In place of a name, it will have a `hiverole` which is just the label for
+    this hive. All hives will have a role "hive".
+    """
+
+    HIVEROLE = "hive"
+
+    def __init__(self, hiverole):
+        super(HiveVillager, self).__init__(hiverole, HiveVillager.HIVEROLE)
+
+    @property
+    def label(self):
+        return self.role
+
 # TODO Implementations
 class PlainVillagerAI(Villager):
     """
