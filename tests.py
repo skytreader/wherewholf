@@ -26,9 +26,36 @@ class CharacterPrivileges(unittest.TestCase):
 
 class HiveTest(unittest.TestCase):
     
+    def setUp(self):
+        self.beehive = HiveVillager("bee")
+        self.sample_victims = (Villager("Homer"), Villager("Lenny"),
+          Villager("Karl"), Villager("Barney"))
+    
     def test_rolelabel(self):
-        beehive = HiveVillager("bee")
-        self.assertEqual(beehive.label, beehive.role)
+        self.assertEqual(self.beehive.label, self.beehive.role)
+
+    def test_get_leading(self):
+        self.assertEqual(self.beehive.get_leading(), None)
+
+        # Let Homer lead
+        self.beehive.vote(self.sample_victims[0])
+        self.beehive.vote(self.sample_victims[0])
+
+        self.assertEqual(self.beehive.get_leading(), self.sample_victims[0])
+        
+        # A few more votes and Homer shall still lead
+        self.beehive.vote(self.sample_victims[2])
+        self.beehive.vote(self.sample_victims[3])
+
+        self.assertEqual(self.beehive.get_leading(), self.sample_victims[0])
+
+        # Make a tie and a vote for Lenny
+        self.beehive.vote(self.sample_victims[1])
+        self.beehive.vote(self.sample_victims[2])
+        self.beehive.vote(self.sample_victims[3])
+
+        self.assertTrue(self.beehive.get_leading() in (self.sample_victims[0],
+          self.sample_victims[2], self.sample_victims[3]))
 
 class IdentityMapperTests(unittest.TestCase):
 

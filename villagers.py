@@ -89,17 +89,22 @@ class HiveVillager(Villager):
     """
     This is not actually a villager. This structure is meant to aggregate
     decisions from various villagers and enact that decision based on some
-    metric (simplest would be simple majority voting).
+    metric (by default, simple majority voting).
 
     In place of a name, it will have a `hiverole` which is just the label for
     this hive. All hives will have a role "hive".
     """
+
+    # TODO I need a way for hive members to contact their HiveVillager for a vote.
+    # The hive will observe all its members. Members will signal to the hive
+    # for a vote.
 
     HIVEROLE = "hive"
 
     def __init__(self, hiverole):
         super(HiveVillager, self).__init__(hiverole, HiveVillager.HIVEROLE)
         self.__members = []
+        self.__votes = {}
 
     @property
     def label(self):
@@ -110,6 +115,34 @@ class HiveVillager(Villager):
 
     def is_member(self, villager):
         return villager in self.__members
+    
+    def vote(self, villager):
+        """
+        Votes/nominates the given villager for the collective action of this
+        hive.
+        """
+        if self.__votes.get(villager):
+            self.__votes[villager] += 1
+        else:
+            self.__votes[villager] = 1
+
+    def get_leading(self):
+        """
+        Get the villager who leads the most in votation. If there is no
+        obvious consensus yet, return None.
+
+        If there are several leading villagers, one will be chosen at random. 
+        """
+        max_villager = None
+        # Valid since a villager in __votes will have at least one vote.
+        max_count = 0
+
+        for nominee in self.__votes.keys():
+            if self.__votes[nominee] > max_count:
+                max_count = self.__votes[nominee]
+                max_villager = nominee
+
+        return max_villager
 
 # TODO Implementations
 class PlainVillagerAI(Villager):
