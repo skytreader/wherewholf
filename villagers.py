@@ -6,10 +6,19 @@ import random
 
 class Villager(object):
     
-    def __init__(self, name, role="villager"):
+    def __init__(self, name, village_hive, role="villager"):
+        """
+        name - the name of this villager
+        village_hive - the hive to which this villager belongs. Note that since
+          the hive is just a special kind of villager, hive entities will set
+          this to None
+        role - the role of this villager. By default villager is in the plain
+          "villager" role.
+        """
         self._name = name
         self._role = role
         self._is_alive = True
+        self.__village_hive = village_hive
 
         self.health_guard = False
 
@@ -24,6 +33,10 @@ class Villager(object):
     @property
     def is_alive(self):
         return self._is_alive
+
+    @property
+    def village_hive(self):
+        return self.__village_hive
 
     def selfless_select(self, villagers):
         """
@@ -92,7 +105,8 @@ class HiveVillager(Villager):
     metric (by default, simple majority voting).
 
     In place of a name, it will have a `hiverole` which is just the label for
-    this hive. All hives will have a role "hive".
+    this hive. All hives will have a role "hive" and will _not_ belong to any
+    village hive (i.e., it is set to None).
     """
 
     # TODO I need a way for hive members to contact their HiveVillager for a vote.
@@ -102,7 +116,7 @@ class HiveVillager(Villager):
     HIVEROLE = "hive"
 
     def __init__(self, hiverole):
-        super(HiveVillager, self).__init__(hiverole, HiveVillager.HIVEROLE)
+        super(HiveVillager, self).__init__(hiverole, None, HiveVillager.HIVEROLE)
         self.__members = []
         self.__votes = {}
 
@@ -150,8 +164,8 @@ class PlainVillagerAI(Villager):
     Werewolf food villager.
     """
 
-    def __init__(self, name):
-        super(PlainVillagerAI, self).__init__(name)
+    def __init__(self, name, village_hive):
+        super(PlainVillagerAI, self).__init__(name, village_hive)
 
 class WerewolfAI(Villager):
     """
@@ -161,9 +175,9 @@ class WerewolfAI(Villager):
     for something so simple.
     """
     
-    def __init__(self, name):
+    def __init__(self, name, village_hive):
         # Atta mean killing machine!
-        super(WerewolfAI, self).__init__(name, NotedVillagers.WEREWOLF)
+        super(WerewolfAI, self).__init__(name, village_hive, NotedVillagers.WEREWOLF)
     
     def ability(self, game_master):
         """
@@ -176,8 +190,8 @@ class WerewolfAI(Villager):
         game_master.werewolf_kill_vote[villager] += 1
 
 class SeerAI(Villager):
-    def __init__(self, name):
-        super(SeerAI, self).__init__(name, NotedVillagers.SEER)
+    def __init__(self, name, village_hive):
+        super(SeerAI, self).__init__(name, village_hive, NotedVillagers.SEER)
         self.__villager_perception = {}
 
     def ability(self, game_master):
@@ -190,8 +204,8 @@ class SeerAI(Villager):
 
 class WitchAI(Villager):
     
-    def __init__(self, name):
-        super(WitchAI, self).__init__(name, NotedVillagers.WITCH)
+    def __init__(self, name, village_hive):
+        super(WitchAI, self).__init__(name, village_hive, NotedVillagers.WITCH)
         # The following variables hold _True_ if the potions can still be used.
         self.can_poison = True
         self.can_potion = True

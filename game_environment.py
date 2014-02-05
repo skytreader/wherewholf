@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from errors import GamePrivilegeError, RegistrationError, VillageClosedError
+from villagers import HiveVillager
 
 class NotedVillagers:
     """
@@ -20,6 +21,8 @@ class GameEnvironment(object):
 
     For game play to happen, we need a `GameMaster` (as below).
     """
+
+    # TODO Clarify mechanics regarding the properties of this class.
     
     def __init__(self):
         self.villager_set = set()
@@ -31,6 +34,15 @@ class GameEnvironment(object):
 
         self._werewolf_count = 0
         self._village_open = True
+
+        self._default_hive = HiveVillager("village hive")
+    
+    @property
+    def default_hive(self):
+        """
+        The hive to which all villagers should belong.
+        """
+        return self._default_hive
 
     @property
     def village_open(self):
@@ -55,6 +67,7 @@ class GameEnvironment(object):
         if self.village_open:
             self.villager_set.add(villager)
             self.villager_names.add(villager.name)
+            self.default_hive.add_member(villager)
             self.werewolf_kill_vote[villager] = 0
         else:
             raise VillageClosedError("new players are trying to get in a closed village")
