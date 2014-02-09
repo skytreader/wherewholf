@@ -6,19 +6,15 @@ import random
 
 class Villager(object):
     
-    def __init__(self, name, village_hive, role="villager"):
+    def __init__(self, name, role="villager"):
         """
         name - the name of this villager
-        village_hive - the hive to which this villager belongs. Note that since
-          the hive is just a special kind of villager, hive entities will set
-          this to None
         role - the role of this villager. By default villager is in the plain
           "villager" role.
         """
         self._name = name
         self._role = role
         self._is_alive = True
-        self.__village_hive = village_hive
 
         self.health_guard = False
 
@@ -33,10 +29,6 @@ class Villager(object):
     @property
     def is_alive(self):
         return self._is_alive
-
-    @property
-    def village_hive(self):
-        return self.__village_hive
 
     def selfless_select(self, villagers):
         """
@@ -116,7 +108,7 @@ class HiveVillager(Villager):
     HIVEROLE = "hive"
 
     def __init__(self, hiverole):
-        super(HiveVillager, self).__init__(hiverole, None, HiveVillager.HIVEROLE)
+        super(HiveVillager, self).__init__(hiverole, HiveVillager.HIVEROLE)
         self.__members = []
         self.__votes = {}
 
@@ -164,8 +156,8 @@ class PlainVillagerAI(Villager):
     Werewolf food villager.
     """
 
-    def __init__(self, name, village_hive):
-        super(PlainVillagerAI, self).__init__(name, village_hive)
+    def __init__(self, name):
+        super(PlainVillagerAI, self).__init__(name)
 
 class WerewolfAI(Villager):
     """
@@ -175,9 +167,9 @@ class WerewolfAI(Villager):
     for something so simple.
     """
     
-    def __init__(self, name, village_hive):
+    def __init__(self, name):
         # Atta mean killing machine!
-        super(WerewolfAI, self).__init__(name, village_hive, NotedVillagers.WEREWOLF)
+        super(WerewolfAI, self).__init__(name, NotedVillagers.WEREWOLF)
     
     def ability(self, game_master):
         """
@@ -190,8 +182,8 @@ class WerewolfAI(Villager):
         game_master.werewolf_kill_vote[villager] += 1
 
 class SeerAI(Villager):
-    def __init__(self, name, village_hive):
-        super(SeerAI, self).__init__(name, village_hive, NotedVillagers.SEER)
+    def __init__(self, name):
+        super(SeerAI, self).__init__(name, NotedVillagers.SEER)
         self.__villager_perception = {}
 
     def ability(self, game_master):
@@ -204,8 +196,8 @@ class SeerAI(Villager):
 
 class WitchAI(Villager):
     
-    def __init__(self, name, village_hive):
-        super(WitchAI, self).__init__(name, village_hive, NotedVillagers.WITCH)
+    def __init__(self, name):
+        super(WitchAI, self).__init__(name, NotedVillagers.WITCH)
         # The following variables hold _True_ if the potions can still be used.
         self.can_poison = True
         self.can_potion = True

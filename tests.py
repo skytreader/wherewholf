@@ -84,13 +84,13 @@ class IdentityMapperTests(unittest.TestCase):
     def test_registration(self):
         # You shall not pass (the registration, throw exception)!
         dirty_name = "sauron" + IdentityMapper.RECORD_SEPARATOR
-        dirty_name_villager = Villager(dirty_name, STOCKPILE.default_hive)
+        dirty_name_villager = Villager(dirty_name)
 
         self.assertRaises(RegistrationError, self.id_accountant.register_identity,\
           dirty_name_villager)
 
         dirty_job = IdentityMapper.RECORD_SEPARATOR + "balrog"
-        dirty_job_villager = Villager("sauron", STOCKPILE.default_hive, dirty_job)
+        dirty_job_villager = Villager("sauron", dirty_job)
 
         self.assertRaises(RegistrationError, self.id_accountant.register_identity,\
           dirty_job_villager)
@@ -105,9 +105,9 @@ class IdentityMapperTests(unittest.TestCase):
 class GameEnvironmentTests(unittest.TestCase):
     
     def setUp(self):
-        self.lupin = WerewolfAI("Lupin", STOCKPILE.default_hive)
-        self.trelawney = SeerAI("Trelawney", STOCKPILE.default_hive)
-        self.bellatrix = SeerAI("Bellatrix", STOCKPILE.default_hive)
+        self.lupin = WerewolfAI("Lupin")
+        self.trelawney = SeerAI("Trelawney")
+        self.bellatrix = SeerAI("Bellatrix")
 
     def test_game_states(self):
         # Create a GameEnvironment
@@ -124,7 +124,7 @@ class GameEnvironmentTests(unittest.TestCase):
             test_village.village_open = True
 
         # Test that we can't add any other character
-        self.assertRaises(VillageClosedError, test_village.register_villager, SeerAI("Cassandra", STOCKPILE.default_hive))
+        self.assertRaises(VillageClosedError, test_village.register_villager, SeerAI("Cassandra"))
 
 if __name__ == "__main__":
     unittest.main()
