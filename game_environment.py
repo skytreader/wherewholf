@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from errors import GamePrivilegeError, RegistrationError, VillageClosedError
+from observer import Observer
 from villagers import HiveVillager
 
 class NotedVillagers:
@@ -13,7 +14,9 @@ class NotedVillagers:
 
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
-class GameEnvironment(object):
+
+# TODO Observer's update method
+class GameEnvironment(Observer):
     """
     The `GameEnvironment` is responsible for noting the variables involved in a
     game. By itself, no game play happens. The GameEnvironment is oblivious to
@@ -178,6 +181,9 @@ class GameMaster(object):
     Because of this, `GameMaster` will have a lot of "pass-through" properties
     to `GameEnvironment`.
     """
+
+    # TODO Will the Observer pattern usage render this class obsolete? The only
+    # function that might remain relevant is `play()`.
     
     def __init__(self, game_environment):
         self.__game_environment = game_environment

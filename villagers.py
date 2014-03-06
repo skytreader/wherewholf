@@ -1,10 +1,15 @@
 #! /usr/bin/env python
 
+from observer import Observable
 from game_environment import NotedVillagers, GameEnvironment
 
 import random
 
-class Villager(object):
+class Villager(Observable):
+    """
+    At this level, the notify_observer method for Observable is not yet
+    implemented.
+    """
     
     def __init__(self, name, role="villager"):
         """
@@ -60,7 +65,7 @@ class Villager(object):
 
     def nominate_for_kill(self):
         """
-        Nominate a villager for killing. This should never return None.
+        Nominate a villager for killing. This should always return a valid villager.
         """
         # TODO Specify the structure of a kill nomination
         raise NotImplementedError("All villagers must nominate someone for killing.")
@@ -90,7 +95,7 @@ class Villager(object):
     def request_kill(self, game_master, villager):
         game_master.kill_villager(self, villager)
 
-class HiveVillager(Villager):
+class HiveVillager(Villager, Observer):
     """
     This is not actually a villager. This structure is meant to aggregate
     decisions from various villagers and enact that decision based on some
@@ -159,6 +164,11 @@ class PlainVillagerAI(Villager):
     def __init__(self, name):
         super(PlainVillagerAI, self).__init__(name)
 
+class WerewolfHive(HiveVillager):
+    
+    def __init__(self):
+        super(WerewolfHive, self).__init__("werewolf hive")
+
 class WerewolfAI(Villager):
     """
     Dumb artificial intelligence for a werewolf character.
@@ -178,8 +188,12 @@ class WerewolfAI(Villager):
         """
         # What if werewolf wants to offer self in the name of deception?
         villager = self.selfless_select(game_master.villager_list)
-
+        
+        # FIXME Nope. Notify your the werewolf Hive first.
         game_master.werewolf_kill_vote[villager] += 1
+    
+    def notify_observer(self, command):
+        
 
 class SeerAI(Villager):
     def __init__(self, name):

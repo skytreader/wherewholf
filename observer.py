@@ -34,4 +34,9 @@ class Observable(object):
         self.__observer_list.insert(0, observer)
 
     def notify_observer(self, command):
-        pass
+        """
+        Observables need to implement this method for the wherewholf
+        modification on this pattern: observables may choose the observers to
+        whom they will broadcast their signals.
+        """
+        raise NotImplementedError("Undecided on who to update.")
