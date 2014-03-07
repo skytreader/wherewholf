@@ -1,12 +1,11 @@
 #! /usr/bin/env python
 
-from observer import Observable
-from game_environment import NotedVillagers, GameEnvironment
-from gameplayers import GamePlayer
+from observer import Observable, Observer
+from gameplayer import GamePlayer, NotedVillagers
 
 import random
 
-class Villager(Player):
+class Villager(GamePlayer):
     """
     At this level, the notify_observer method for Observable is not yet
     implemented.
@@ -191,7 +190,7 @@ class WerewolfAI(Villager):
         game_master.werewolf_kill_vote[villager] += 1
     
     def notify_observer(self, command):
-        
+        pass
 
 class SeerAI(Villager):
     def __init__(self, name):

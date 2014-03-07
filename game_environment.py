@@ -3,14 +3,7 @@
 from errors import GamePrivilegeError, RegistrationError, VillageClosedError
 from observer import Observer
 from villagers import HiveVillager
-
-class NotedVillagers:
-    """
-    The official role strings used for this game.
-    """
-    WEREWOLF = "werewolf"
-    SEER = "seer"
-    WITCH = "witch"
+from gameplayer import NotedVillagers
 
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
