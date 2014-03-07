@@ -122,7 +122,13 @@ class HiveVillager(Villager, Observer):
         return self.role
 
     def add_member(self, villager):
+        """
+        Add the given villager to this Hive. Implementing classes may want to 
+        override this function to validate the identity of the given villager
+        (i.e., so that ordinary villagers don't join the werewolf pack).
+        """
         self.__members.insert(0, villager)
+        villager.add_observer(self)
 
     def is_member(self, villager):
         return villager in self.__members
