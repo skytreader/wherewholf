@@ -1,6 +1,6 @@
 #! /usr/bin/env python 
 from errors import RegistrationError, VillageClosedError
-from game_environment import NotedVillagers, GameEnvironment, IdentityMapper
+from game_environment import NotedPlayers, GameEnvironment, IdentityMapper
 from villagers import HiveVillager, Villager, WerewolfAI, SeerAI, WitchAI
 
 import unittest
@@ -14,19 +14,19 @@ class CharacterPrivileges(unittest.TestCase):
     
     def test_privileges(self):
         # Werewolf tests
-        self.assertTrue(IdentityMapper.can_kill(NotedVillagers.WEREWOLF))
-        self.assertFalse(IdentityMapper.can_check(NotedVillagers.WEREWOLF))
-        self.assertFalse(IdentityMapper.can_guard(NotedVillagers.WEREWOLF))
+        self.assertTrue(IdentityMapper.can_kill(NotedPlayers.WEREWOLF))
+        self.assertFalse(IdentityMapper.can_check(NotedPlayers.WEREWOLF))
+        self.assertFalse(IdentityMapper.can_guard(NotedPlayers.WEREWOLF))
         
         # Seer tests
-        self.assertFalse(IdentityMapper.can_kill(NotedVillagers.SEER))
-        self.assertTrue(IdentityMapper.can_check(NotedVillagers.SEER))
-        self.assertFalse(IdentityMapper.can_guard(NotedVillagers.SEER))
+        self.assertFalse(IdentityMapper.can_kill(NotedPlayers.SEER))
+        self.assertTrue(IdentityMapper.can_check(NotedPlayers.SEER))
+        self.assertFalse(IdentityMapper.can_guard(NotedPlayers.SEER))
         
         #Witch tests
-        self.assertTrue(IdentityMapper.can_kill(NotedVillagers.WITCH))
-        self.assertFalse(IdentityMapper.can_check(NotedVillagers.WITCH))
-        self.assertTrue(IdentityMapper.can_guard(NotedVillagers.WITCH))
+        self.assertTrue(IdentityMapper.can_kill(NotedPlayers.WITCH))
+        self.assertFalse(IdentityMapper.can_check(NotedPlayers.WITCH))
+        self.assertTrue(IdentityMapper.can_guard(NotedPlayers.WITCH))
 
 class HiveTest(unittest.TestCase):
     
@@ -100,7 +100,7 @@ class IdentityMapperTests(unittest.TestCase):
         normal_werewolf = WerewolfAI("fenrir")
         self.id_accountant.register_identity(normal_werewolf)
         self.assertEqual(self.id_accountant.get_identity(normal_werewolf), \
-          IdentityMapper.PRIVILEGE_TABLE[NotedVillagers.WEREWOLF])
+          IdentityMapper.PRIVILEGE_TABLE[NotedPlayers.WEREWOLF])
 
 class GameEnvironmentTests(unittest.TestCase):
     

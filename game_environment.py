@@ -2,8 +2,8 @@
 
 from errors import GamePrivilegeError, RegistrationError, VillageClosedError
 from observer import Observer
-from villagers import HiveVillager
-from gameplayer import NotedVillagers
+from villagers import HiveVillager, WerewolfHive
+from gameplayer import NotedPlayers
 
 # FIXME I need a sort of "hive mind" for the whole village. Otherwise, voting
 # for a killer may appear nonsensical.
@@ -32,7 +32,7 @@ class GameEnvironment(Observer):
         self._village_open = True
 
         self._default_hive = HiveVillager("village hive")
-        self._werewolf_hive = WerewolfHive("werewolf hive")
+        self._werewolf_hive = WerewolfHive()
     
     @property
     def default_hive(self):
@@ -93,9 +93,9 @@ class IdentityMapper(object):
     CAN_CHECK_INDEX = 1
     CAN_GUARD_INDEX = 2
     PRIVILEGE_TABLE = {}
-    PRIVILEGE_TABLE[NotedVillagers.WEREWOLF] = (True, False, False)
-    PRIVILEGE_TABLE[NotedVillagers.SEER] = (False, True, False)
-    PRIVILEGE_TABLE[NotedVillagers.WITCH] = (True, False, True)
+    PRIVILEGE_TABLE[NotedPlayers.WEREWOLF] = (True, False, False)
+    PRIVILEGE_TABLE[NotedPlayers.SEER] = (False, True, False)
+    PRIVILEGE_TABLE[NotedPlayers.WITCH] = (True, False, True)
 
     RECORD_SEPARATOR = chr(30)
 
@@ -197,7 +197,7 @@ class GameMaster(object):
         If killer has the sufficient permission, kill the victim. Otherwise, will
         raise a GamePrivilegeError.
         """
-        if NotedVillagers.can_kill(killer.role):
+        if NotedPlayers.can_kill(killer.role):
             self.__game_environment.kill_villager(victim)
         else:
             raise GamePrivilegeError(killer)
@@ -207,7 +207,7 @@ class GameMaster(object):
         If checker has the sufficient permission, return the role string of
         victim. Otherwise, will raise a GamePrivilegeError.
         """
-        if NotedVillagers.can_kill(checker.role):
+        if NotedPlayers.can_kill(checker.role):
             return victim.role
         else:
             raise GamePrivilegeError(checker)
@@ -217,7 +217,7 @@ class GameMaster(object):
         If guardian has the sufficient permission, set taker's health_guard
         to true. Otherwise, will raise a GamePrivilegeError.
         """
-        if NotedVillagers.can_guard(guardian.role):
+        if NotedPlayers.can_guard(guardian.role):
             taker.health_guard = True
         else:
             raise GamePrivilegeError(guardian)

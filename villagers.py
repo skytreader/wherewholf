@@ -2,7 +2,7 @@
 
 from errors import RegistrationError
 from observer import Observable, Observer
-from gameplayer import GamePlayer, NotedVillagers
+from gameplayer import GamePlayer, NotedPlayers
 
 import random
 
@@ -168,7 +168,7 @@ class WerewolfHive(HiveVillager):
         super(WerewolfHive, self).__init__("werewolf hive")
 
     def add_member(self, villager):
-        if self.role == NotedVillagers.WEREWOLF:
+        if self.role == NotedPlayers.WEREWOLF:
             super(WerewolfHive, self).add_member(villager)
         else:
             raise RegistrationError(villager)
@@ -183,7 +183,7 @@ class WerewolfAI(Villager):
     
     def __init__(self, name):
         # Atta mean killing machine!
-        super(WerewolfAI, self).__init__(name, NotedVillagers.WEREWOLF)
+        super(WerewolfAI, self).__init__(name, NotedPlayers.WEREWOLF)
     
     def ability(self, game_master):
         """
@@ -201,7 +201,7 @@ class WerewolfAI(Villager):
 
 class SeerAI(Villager):
     def __init__(self, name):
-        super(SeerAI, self).__init__(name, NotedVillagers.SEER)
+        super(SeerAI, self).__init__(name, NotedPlayers.SEER)
         self.__villager_perception = {}
 
     def ability(self, game_master):
@@ -215,7 +215,7 @@ class SeerAI(Villager):
 class WitchAI(Villager):
     
     def __init__(self, name):
-        super(WitchAI, self).__init__(name, NotedVillagers.WITCH)
+        super(WitchAI, self).__init__(name, NotedPlayers.WITCH)
         # The following variables hold _True_ if the potions can still be used.
         self.can_poison = True
         self.can_potion = True
