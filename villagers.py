@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from errors import RegistrationError
 from observer import Observable, Observer
 from gameplayer import GamePlayer, NotedVillagers
 
@@ -165,6 +166,12 @@ class WerewolfHive(HiveVillager):
     
     def __init__(self):
         super(WerewolfHive, self).__init__("werewolf hive")
+
+    def add_member(self, villager):
+        if self.role == NotedVillagers.WEREWOLF:
+            super(WerewolfHive, self).add_member(villager)
+        else:
+            raise RegistrationError(villager)
 
 class WerewolfAI(Villager):
     """

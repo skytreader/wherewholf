@@ -17,10 +17,15 @@ class GamePlayer(Observable):
     def role(self):
         return self._role
 
-class NotedVillagers:
+class NotedPlayers:
     """
     The official role strings used for this game.
     """
+    VILLAGE_HIVE = "village hive"
+
     WEREWOLF = "werewolf"
+    WEREWOLF_HIVE = "werewolf hive"
     SEER = "seer"
+    SEER_HIVE = "seer hive"
     WITCH = "witch"
+    WITCH_HIVE = "witch hive"

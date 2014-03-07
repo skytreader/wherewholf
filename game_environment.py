@@ -32,6 +32,7 @@ class GameEnvironment(Observer):
         self._village_open = True
 
         self._default_hive = HiveVillager("village hive")
+        self._werewolf_hive = WerewolfHive("werewolf hive")
     
     @property
     def default_hive(self):
