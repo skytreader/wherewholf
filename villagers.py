@@ -2,10 +2,11 @@
 
 from observer import Observable
 from game_environment import NotedVillagers, GameEnvironment
+from gameplayers import GamePlayer
 
 import random
 
-class Villager(Observable):
+class Villager(Player):
     """
     At this level, the notify_observer method for Observable is not yet
     implemented.
@@ -17,19 +18,10 @@ class Villager(Observable):
         role - the role of this villager. By default villager is in the plain
           "villager" role.
         """
-        self._name = name
-        self._role = role
+        super(Villager, self).__init__(name, role)
         self._is_alive = True
 
         self.health_guard = False
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def role(self):
-        return self._role
 
     @property
     def is_alive(self):
@@ -95,7 +87,7 @@ class Villager(Observable):
     def request_kill(self, game_master, villager):
         game_master.kill_villager(self, villager)
 
-class HiveVillager(Villager, Observer):
+class HiveVillager(GamePlayer, Observer):
     """
     This is not actually a villager. This structure is meant to aggregate
     decisions from various villagers and enact that decision based on some
