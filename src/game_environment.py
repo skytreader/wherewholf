@@ -23,6 +23,7 @@ class GameEnvironment(Observer):
     def __init__(self):
         self.villager_set = set()
         self.villager_names = set()
+        self.id_mapper = IdentityMapper()
         self.werewolf_kill_vote = {}
         self.village_kill_vote = {}
         # Will hold the reasoning of players on who to kill
@@ -62,6 +63,8 @@ class GameEnvironment(Observer):
 
     def register_villager(self, villager):
         if self.village_open:
+            # Register in IdentityMapper first to save some constant time
+            self.id_mapper.register_identity(villager)
             self.villager_set.add(villager)
             self.villager_names.add(villager.name)
             self.default_hive.add_member(villager)
@@ -116,11 +119,15 @@ class IdentityMapper(object):
             raise RegistrationError(villager)
 
         registry_key = self.__compute_registry_key(villager)
+
+        if self.__character_map.get(registry_key) is not None:
+            raise RegistrationError(villager)
         # FIXME If the villager's role string is not mapped, this will throw an
         # exception. Maybe, catch it and throw a RegistrationError?
         self.__character_map[registry_key] = IdentityMapper.PRIVILEGE_TABLE[villager.role]
 
     def get_identity(self, villager):
+        # FIXME What is this for? This seems redundant.
         registry_key = self.__compute_registry_key(villager)
         return self.__character_map[registry_key]
     

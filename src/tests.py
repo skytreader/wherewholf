@@ -109,22 +109,33 @@ class GameEnvironmentTests(unittest.TestCase):
         self.trelawney = SeerAI("Trelawney")
         self.bellatrix = SeerAI("Bellatrix")
 
+        self.test_village = GameEnvironment()
+        self.test_crew = (self.lupin, self.trelawney, self.bellatrix)
+
     def test_game_states(self):
         # Create a GameEnvironment
-        test_village = GameEnvironment()
-        test_crew = (self.lupin, self.trelawney, self.bellatrix)
 
-        for crew in test_crew:
-            test_village.register_villager(crew)
+        for crew in self.test_crew:
+            self.test_village.register_villager(crew)
 
-        test_village.village_open = False
+        self.test_village.village_open = False
 
         # Test that we can't open it again
         with self.assertRaises(VillageClosedError):
-            test_village.village_open = True
+            self.test_village.village_open = True
 
         # Test that we can't add any other character
-        self.assertRaises(VillageClosedError, test_village.register_villager, SeerAI("Cassandra"))
+        self.assertRaises(VillageClosedError, self.test_village.register_villager, SeerAI("Cassandra"))
+
+    def test_deep_duplicates(self):
+        """
+        Registering deep duplicates (same name and role but different objects,
+        i.e., "deep copies") shall not pass. Throw a RegistrationError.
+        """
+        self.test_village.register_villager(self.lupin)
+        self.lupin_clone = WerewolfAI("Lupin")
+
+        self.assertRaises(RegistrationError, self.test_village.register_villager, self.lupin_clone)
 
 if __name__ == "__main__":
     unittest.main()
