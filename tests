@@ -1,1 +1,1 @@
-python tests.py
+python src/tests.py
