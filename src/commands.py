@@ -2,11 +2,16 @@
 
 import json
 
+##########################################################
+# DO NOT USE THIS YET. ADDS AN EXTRA LAYER OF COMPLEXITY #
+##########################################################
+
 """
 Contains functionality to create commands to be issued to the Observers.
 Commands are abstractly structured as hash maps.
 """
 
+# TODO Clarify the types for these methods
 class Commander(object):
     """
     This class defines all the commands available to Observables in creating
