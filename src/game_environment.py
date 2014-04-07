@@ -107,12 +107,8 @@ class IdentityMapper(object):
         A villager's registry key is made up of the following:
             - The villager's name
             - The villager's role
-            - The villager's id (memory address/hash)
-
-        What's stopping us from using the plain hash again? :|
         """
-        return "".join((villager.name, IdentityMapper.RECORD_SEPARATOR, villager.role,\
-          str(id(villager))))
+        return "".join((villager.name, IdentityMapper.RECORD_SEPARATOR, villager.role))
 
     def register_identity(self, villager):
         if IdentityMapper.RECORD_SEPARATOR in villager.name or \
