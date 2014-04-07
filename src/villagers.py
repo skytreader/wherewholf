@@ -96,6 +96,9 @@ class HiveVillager(GamePlayer, Observer):
     In place of a name, it will have a `hiverole` which is just the label for
     this hive. All hives will have a role "hive" and will _not_ belong to any
     village hive (i.e., it is set to None).
+
+    They are both Observer and Observable. They observe their members and they
+    are observed by...(GameMaster?)
     """
 
     # TODO I need a way for hive members to contact their HiveVillager for a vote.

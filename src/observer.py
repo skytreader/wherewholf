@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from commands import PassThroughCommander
+
 """
 Quick and dirty Observer pattern style in Python. Custom-built for wherewholf.
 
@@ -15,9 +17,12 @@ OR
 Customizations for wherewholf:
  - Sometimes, we only want to notify a certain subset of observers. We need to
    make sure that only this subset is notified. We could issue a command to all
-   observers with a filter field but adn require them to check this field if
+   observers with a filter field but and require them to check this field if
    the given command is for them. But implementations which will not respect
    this will be able to cheat on the game!
+
+   - Nope. The burden of filtering falls on the Observables. For that, we will
+     give them an accept_command method.
 """
 
 class Observer(object):
@@ -27,11 +32,26 @@ class Observer(object):
 
 class Observable(object):
     
-    def __init__(self):
+    def __init__(self, cmd_manager = None):
         self.__observer_list = []
+        if cmd_manager:
+            self.__cmd_manager = cmd_manager
+        else:
+            self.__cmd_manager = PassThroughCommander()
 
     def add_observer(self, observer):
         self.__observer_list.insert(0, observer)
+
+    def _can_accept_command(self, command, observer):
+        """
+        Return true if the given observer may receive the intended command. This
+        implies that Observables have a certain assumption about their
+        Observers. The command is given as a Python map.
+
+        This is how we filter the command to Observers. Implementing classes
+        must override this. Returns False by default.
+        """
+        return False
 
     def notify_observer(self, command):
         """
@@ -39,4 +59,6 @@ class Observable(object):
         modification on this pattern: observables may choose the observers to
         whom they will broadcast their signals.
         """
-        raise NotImplementedError("Undecided on who to update.")
+        for observer in self.__observer_list:
+            if self._can_accept_command(command, observer):
+                observer.update(self, command) 

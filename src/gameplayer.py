@@ -1,13 +1,15 @@
 #! /usr/bin/env python
 
 from observer import Observable
+from commands import PassThroughCommander
 
 class GamePlayer(Observable):
     
-    def __init__(self, name, role):
+    def __init__(self, name, role, cmd_manager = PassThroughCommander()):
         super(GamePlayer, self).__init__()
         self._name = name
         self._role = role
+        self._cmd_manager = cmd_manager
 
     @property
     def name(self):
