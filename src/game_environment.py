@@ -122,12 +122,14 @@ class IdentityMapper(object):
 
         if self.__character_map.get(registry_key) is not None:
             raise RegistrationError(villager)
-        # FIXME If the villager's role string is not mapped, this will throw an
-        # exception. Maybe, catch it and throw a RegistrationError?
         self.__character_map[registry_key] = IdentityMapper.PRIVILEGE_TABLE[villager.role]
 
-    def get_identity(self, villager):
-        # FIXME What is this for? This seems redundant.
+    def get_privileges(self, villager):
+        """
+        Get the privileges of the given villager. The privileges are returned
+        as a tuple. The ordering of the tuple is defined by the
+        CAN_<action type>_INDEX constants of this class.
+        """
         registry_key = self.__compute_registry_key(villager)
         return self.__character_map[registry_key]
     
@@ -136,7 +138,7 @@ class IdentityMapper(object):
         """
         Given a villager, verify whether that villager can kill another villager.
         """
-        identity = self.get_identity(villager)
+        identity = self.get_privileges(villager)
         return identity[IdentityMapper.CAN_KILL_INDEX]
 
     def verify_check(self, villager):
@@ -144,14 +146,14 @@ class IdentityMapper(object):
         Given a villager, verify whether that villager can check the role of
         another villager.
         """
-        identity = self.get_identity(villager)
+        identity = self.get_privileges(villager)
         return identity[IdentityMapper.CAN_CHECK_INDEX]
 
     def verify_guard(self, villager):
         """
         Given a villager, verify whether a villager can guard another villager.
         """
-        identity = self.get_identity(villager)
+        identity = self.get_privileges(villager)
         return identity[IdentityMapper.CAN_GUARD_INDEX]
 
     @staticmethod

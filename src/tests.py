@@ -99,7 +99,7 @@ class IdentityMapperTests(unittest.TestCase):
         # Test registration of all roles and ensure that they get the proper privileges
         normal_werewolf = WerewolfAI("fenrir")
         self.id_accountant.register_identity(normal_werewolf)
-        self.assertEqual(self.id_accountant.get_identity(normal_werewolf), \
+        self.assertEqual(self.id_accountant.get_privileges(normal_werewolf), \
           IdentityMapper.PRIVILEGE_TABLE[NotedPlayers.WEREWOLF])
 
 class GameEnvironmentTests(unittest.TestCase):
