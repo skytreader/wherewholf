@@ -38,6 +38,12 @@ class HiveTest(unittest.TestCase):
     def test_rolelabel(self):
         self.assertEqual(self.beehive.label, self.beehive.role)
 
+    def test_properties(self):
+        """
+        Assertions on the properties of Hives as special villagers.
+        """
+        self.assertEqual(self.beehive.hiverole, self.beehive.name)
+
     def test_get_leading(self):
         self.assertEqual(self.beehive.get_leading(), None)
 

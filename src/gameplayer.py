@@ -19,6 +19,13 @@ class GamePlayer(Observable):
     def role(self):
         return self._role
 
+    def _can_accept_command(self, command, observer):
+        """
+        The default check of who can accept what command. The observer is
+        assumed to be hive.
+        """
+        return command["hiverole"] == observer.hiverole
+
 class NotedPlayers:
     """
     The official role strings used for this game.

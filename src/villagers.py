@@ -116,6 +116,13 @@ class HiveVillager(GamePlayer, Observer):
     def label(self):
         return self.role
 
+    @property
+    def hiverole(self):
+        """
+        Just an alias...
+        """
+        return self.name
+
     def add_member(self, villager):
         """
         Add the given villager to this Hive. Implementing classes may want to 
