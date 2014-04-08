@@ -44,7 +44,7 @@ class Villager(GamePlayer):
         not have any ability at all (common villagers).
 
         The argument is a game_master instance (usually, the game_master handling
-        the game where this instance is involved.
+        the game where this instance is involved).
         """
         pass
     
@@ -55,37 +55,12 @@ class Villager(GamePlayer):
         """
         pass
 
-    def nominate_for_kill(self):
+    def nominate_for_kill(self, villager):
         """
-        Nominate a villager for killing. This should always return a valid villager.
+        For this kill, nominate a specific villager to the appropriate hive.
         """
         # TODO Specify the structure of a kill nomination
         raise NotImplementedError("All villagers must nominate someone for killing.")
-
-    def _decide_for_kill(self, kill_reasons):
-        """
-        Given the collated kill_reasons from all villagers, give this villager
-        time to decide who to vote for killing. Always call this before
-        get_kill_vote .
-        """
-        raise NotImplementedError("This villager is not deciding who to kill.")
-
-    def _kill_vote(self):
-        """
-        Always call decide_for_kill before calling get_kill_vote. Return the
-        name of a villager.
-        """
-        raise NotImplementedError("This villager is undecided who to kill!")
-
-    def kill_vote(self, kill_reasons):
-        """
-        GameMaster can just call this method to get a kill vote.
-        """
-        self._decide_for_kill(kill_reasons)
-        return self._kill_vote()
-    
-    def request_kill(self, game_master, villager):
-        game_master.kill_villager(self, villager)
 
 class HiveVillager(GamePlayer, Observer):
     """
