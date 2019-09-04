@@ -6,3 +6,4 @@
 *.log
 *.log.*
 *.bak
+.mypy_cache
