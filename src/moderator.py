@@ -4,16 +4,15 @@ from typing import Dict, Iterable, Set
 
 class Moderator(object):
 
-    def __init__(self, assignments: Dict[Player, GameCharacter]):
-        self.assignments: Dict[Player, GameCharacter] = assignments
-        self.players: Set[Player] = assignments.keys()
+    def __init__(self, players: Set[Player]):
+        self.players: Set[Player] = players
         self.classes: Dict[GameCharacter, Set[Player]] = {}
 
-        for player, character in assignments:
-            if character in self.classes:
-                self.classes[character].add(player)
+        for player in players:
+            if player.role in self.classes:
+                self.classes[type(player.role)].add(player)
             else:
-                self.classes[character] = Set((player,))
+                self.classes[type(player.role)] = Set((player,))
 
     def __kill_player(self, player) -> None:
         self.players.remove(player)

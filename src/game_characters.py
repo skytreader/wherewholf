@@ -6,15 +6,16 @@ import random
 
 class Player(object):
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, role: "GameCharacter"):
         self.name: str = name
+        self.role: GameCharacter = role
 
 
 class GameCharacter(ABC):
 
     @property
     @abstractmethod
-    def prerequisites(self) -> Set[GameCharacter]:
+    def prerequisites(self) -> Set[Type["GameCharacter"]]:
         pass
 
     @abstractmethod
@@ -27,13 +28,13 @@ class GameCharacter(ABC):
     
     @property
     @abstractmethod
-    def hive(self) -> Hive:
+    def hive(self) -> "Hive":
         pass
 
 
 class Werewolf(GameCharacter):
 
-    def prerequisites(self) -> Set[GameCharacter]:
+    def prerequisites(self) -> Set[Type[GameCharacter]]:
         return set()
 
     def night_action(self, players: Sequence[Player]) -> Optional[Player]:
@@ -43,7 +44,7 @@ class Werewolf(GameCharacter):
         return random.choice(players)
 
     @property
-    def hive(self) -> Hive:
+    def hive(self) -> "Hive":
         return WerewolfHive(Werewolf)
 
 
@@ -59,7 +60,7 @@ class Villager(GameCharacter):
         return random.choice(players)
 
     @property
-    def hive(self) -> Hive:
+    def hive(self) -> "Hive":
         return VillagerHive(Villager)
 
 
@@ -67,6 +68,10 @@ class Hive(ABC):
 
     def __init__(self, hivetype: Type[GameCharacter]):
         self.hivetype = GameCharacter
+        self.players: Set[Player] = set()
+    
+    def add_player(self, player: Player):
+        self.players.add(player)
 
     @abstractmethod
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
@@ -80,10 +85,12 @@ class Hive(ABC):
 class WerewolfHive(Hive):
 
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
-        return self.hivetype().night_action(players)
+        potato: Player = random.choice(list(self.players))
+        return potato.role.night_action(players)
 
     def day_consensus(self, players: Sequence[Player]) -> Player:
-        return self.hivetype.day_action(players)
+        potato: Player = random.choice(list(self.players))
+        return potato.role.daytime_behavior(players)
 
 
 class VillagerHive(Hive):
@@ -92,4 +99,5 @@ class VillagerHive(Hive):
         return None
 
     def day_consensus(self, players: Sequence[Player]) -> Player:
-        return self.hivetype.day_action(players)
+        potato: Player = random.choice(list(self.players))
+        return potato.role.daytime_behavior(players)
