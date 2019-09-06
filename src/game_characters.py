@@ -26,9 +26,9 @@ class GameCharacter(ABC):
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         pass
     
-    @property
+    @classmethod
     @abstractmethod
-    def hive(self) -> "Hive":
+    def hive(cls) -> Type["Hive"]:
         pass
 
 
@@ -43,9 +43,9 @@ class Werewolf(GameCharacter):
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         return random.choice(players)
 
-    @property
-    def hive(self) -> "Hive":
-        return WerewolfHive(Werewolf)
+    @classmethod
+    def hive(cls) -> Type["Hive"]:
+        return WerewolfHive
 
 
 class Villager(GameCharacter):
@@ -59,9 +59,9 @@ class Villager(GameCharacter):
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         return random.choice(players)
 
-    @property
-    def hive(self) -> "Hive":
-        return VillagerHive(Villager)
+    @classmethod
+    def hive(cls) -> Type["Hive"]:
+        return VillagerHive
 
 
 class Hive(ABC):
