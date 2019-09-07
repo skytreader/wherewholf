@@ -31,6 +31,10 @@ class GameCharacter(ABC):
     def hive(cls) -> Type["Hive"]:
         pass
 
+    @abstractmethod
+    def __str__(self):
+        return "Generic GameCharacter"
+
 
 class Werewolf(GameCharacter):
 
@@ -46,6 +50,9 @@ class Werewolf(GameCharacter):
     @classmethod
     def hive(cls) -> Type["Hive"]:
         return WerewolfHive
+
+    def __str__(self):
+        return "Werewolf"
 
 
 class Villager(GameCharacter):
@@ -63,6 +70,9 @@ class Villager(GameCharacter):
     def hive(cls) -> Type["Hive"]:
         return VillagerHive
 
+    def __str__(self):
+        return "Villager"
+
 
 class Hive(ABC):
 
@@ -73,6 +83,9 @@ class Hive(ABC):
     def add_player(self, player: Player):
         self.players.add(player)
 
+    def add_players(self, players: Set[Player]):
+        self.players.union(players)
+
     @abstractmethod
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
         pass
@@ -80,6 +93,20 @@ class Hive(ABC):
     @abstractmethod
     def day_consensus(self, players: Sequence[Player]) -> Player:
         pass
+
+class WholeGameHive(Hive):
+    """
+    This is a special hive that should contain all players. The purpose is for
+    arriving at a consensus during the day. Hence, the night_consensus is not
+    implemented.
+    """
+
+    def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+        raise NotImplemented("WholeGameHive is for lynching decisions only.")
+
+    def day_consensus(self, players: Sequence[Player]) -> Player:
+        potato: Player = random.choice(list(self.players))
+        return potato.role.daytime_behavior(players)
 
 
 class WerewolfHive(Hive):
