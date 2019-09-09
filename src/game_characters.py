@@ -76,8 +76,7 @@ class Villager(GameCharacter):
 
 class Hive(ABC):
 
-    def __init__(self, hivetype: Type[GameCharacter]):
-        self.hivetype = GameCharacter
+    def __init__(self):
         self.players: Set[Player] = set()
     
     def add_player(self, player: Player):
@@ -112,6 +111,7 @@ class WholeGameHive(Hive):
 class WerewolfHive(Hive):
 
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+        print("my players " + str(self.players))
         potato: Player = random.choice(list(self.players))
         return potato.role.night_action(players)
 
