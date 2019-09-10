@@ -12,6 +12,18 @@ class Player(object):
 
 
 class GameCharacter(ABC):
+    """
+    GameCharacters encapsulate a role in a game of Werewolf as well as the
+    behavior of an individual assigned to that role. GameCharacter subclasses
+    must maintain a strict hierarachy in terms of behavior:
+
+    1. at the root is this abstract base class
+    2. following this class is a bunch of classes who represent the roles in a
+       Werewolf game. They have some behavior encoded but there is little logic
+       governing their behavior.
+    3. following #2 are a bunch of classes that start to implement a more
+       logical behavior in the game.
+    """
 
     @property
     @abstractmethod
@@ -75,6 +87,10 @@ class Villager(GameCharacter):
 
 
 class Hive(ABC):
+    """
+    A Hive represents a group of players (who are often under the same role)
+    and their collective decisions throughout the game.
+    """
 
     def __init__(self):
         self.players: Set[Player] = set()
