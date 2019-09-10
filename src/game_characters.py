@@ -83,7 +83,7 @@ class Hive(ABC):
         self.players.add(player)
 
     def add_players(self, players: Set[Player]):
-        self.players.union(players)
+        self.players = self.players.union(players)
 
     @abstractmethod
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
@@ -111,7 +111,6 @@ class WholeGameHive(Hive):
 class WerewolfHive(Hive):
 
     def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
-        print("my players " + str(self.players))
         potato: Player = random.choice(list(self.players))
         return potato.role.night_action(players)
 

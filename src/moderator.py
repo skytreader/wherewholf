@@ -31,7 +31,6 @@ class Moderator(object):
             print("Werewolves wake up!")
             spam: Hive = Werewolf.hive()()
             spam.add_players(self.classes[Werewolf])
-            print(self.players)
             dead_by_wolf = spam.night_consensus(list(self.players))
 
             if dead_by_wolf is not None:
@@ -45,6 +44,10 @@ class Moderator(object):
                 else:
                     self.werewolf_count -= 1
                 self.players.remove(dead_by_wolf)
+
+                if self.villager_count <= self.werewolf_count:
+                    print("The werewolves won!")
+                    break
 
                 print("Vote now who to lynch...")
                 lynched = self.whole_game_hive.day_consensus(list(self.players))
