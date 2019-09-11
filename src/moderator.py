@@ -22,11 +22,14 @@ class Moderator(object):
     def __kill_player(self, player) -> None:
         self.players.remove(player)
 
+    def __game_on(self):
+        return self.villager_count > self.werewolf_count and self.werewolf_count > 0
+
     def play(self) -> None:
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
-        while self.villager_count > self.werewolf_count and self.werewolf_count > 0:
+        while self.__game_on():
             print("The village goes to sleep...")
             print("Werewolves wake up!")
             spam: Hive = Werewolf.hive()()
@@ -39,13 +42,13 @@ class Moderator(object):
                     dead_by_wolf.name, dead_by_wolf.role
                 ))
                 
-                if dead_by_wolf.role == Villager:
+                if type(dead_by_wolf.role) == Villager:
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
                 self.players.remove(dead_by_wolf)
 
-                if self.villager_count <= self.werewolf_count:
+                if self.villager_count < self.werewolf_count:
                     print("The werewolves won!")
                     break
 
@@ -54,7 +57,7 @@ class Moderator(object):
 
                 print("You chose to lynch %s, a %s!" % (lynched.name, lynched.role))
 
-                if lynched.role == Villager:
+                if type(lynched.role) == Villager:
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
