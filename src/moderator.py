@@ -26,7 +26,7 @@ class Moderator(object):
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
-        while self.villager_count > self.werewolf_count or self.werewolf_count > 0:
+        while self.villager_count > self.werewolf_count and self.werewolf_count > 0:
             print("The village goes to sleep...")
             print("Werewolves wake up!")
             spam: Hive = Werewolf.hive()()
