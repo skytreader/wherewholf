@@ -49,7 +49,6 @@ class Moderator(object):
                 self.players.remove(dead_by_wolf)
 
                 if self.villager_count < self.werewolf_count:
-                    print("The werewolves won!")
                     break
 
                 print("Vote now who to lynch...")
@@ -62,3 +61,8 @@ class Moderator(object):
                 else:
                     self.werewolf_count -= 1
                 self.players.remove(lynched)
+
+        if self.villager_count < self.werewolf_count:
+            print("The werewolves won!")
+        elif self.werewolf_count == 0:
+            print("The villagers won!")
