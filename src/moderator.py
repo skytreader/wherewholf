@@ -9,7 +9,7 @@ class Moderator(object):
         self.classes: Dict[Type[GameCharacter], Set[Player]] = {}
 
         for player in players:
-            if player.role in self.classes:
+            if type(player.role) in self.classes:
                 self.classes[type(player.role)].add(player)
             else:
                 self.classes[type(player.role)] = set((player,))
