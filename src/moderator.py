@@ -1,4 +1,4 @@
-from .game_characters import GameCharacter, Hive, Player, Werewolf, WholeGameHive, Villager
+from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, Werewolf, WholeGameHive, Villager
 from typing import Dict, Iterable, Set, Type
 
 
@@ -32,7 +32,7 @@ class Moderator(object):
         while self.__game_on():
             print("The village goes to sleep...")
             print("Werewolves wake up!")
-            spam: Hive = Werewolf.hive()()
+            spam: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
             spam.add_players(self.classes[Werewolf])
             dead_by_wolf = spam.night_consensus(list(self.players))
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence, Set, Type
+from typing import Dict, Optional, Sequence, Set, Type
 
 import random
 
@@ -37,11 +37,6 @@ class GameCharacter(ABC):
     @abstractmethod
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         pass
-    
-    @classmethod
-    @abstractmethod
-    def hive(cls) -> Type["Hive"]:
-        pass
 
     @abstractmethod
     def __str__(self):
@@ -59,10 +54,6 @@ class Werewolf(GameCharacter):
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         return random.choice(players)
 
-    @classmethod
-    def hive(cls) -> Type["Hive"]:
-        return WerewolfHive
-
     def __str__(self):
         return "Werewolf"
 
@@ -77,10 +68,6 @@ class Villager(GameCharacter):
 
     def daytime_behavior(self, players: Sequence[Player]) -> Player:
         return random.choice(players)
-
-    @classmethod
-    def hive(cls) -> Type["Hive"]:
-        return VillagerHive
 
     def __str__(self):
         return "Villager"
@@ -143,3 +130,9 @@ class VillagerHive(Hive):
     def day_consensus(self, players: Sequence[Player]) -> Player:
         potato: Player = random.choice(list(self.players))
         return potato.role.daytime_behavior(players)
+
+
+CHARACTER_HIVE_MAPPING: Dict[Type["GameCharacter"], Type["Hive"]] = {
+    Werewolf: WerewolfHive,
+    Villager: VillagerHive
+}
