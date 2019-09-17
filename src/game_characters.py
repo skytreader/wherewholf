@@ -16,9 +16,6 @@ class Player(object):
     def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> "SanitizedPlayer":
         return self.role.daytime_behavior(players)
 
-    def sanitize(self) -> "SanitizedPlayer":
-        return SanitizedPlayer(self)
-
     def __eq__(self, other: Any) -> bool:
         return all((
             self.name == other.name,
