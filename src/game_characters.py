@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Sequence, Set, Type
+from typing import Any, Dict, Optional, Sequence, Set, Type
 
 import random
 
@@ -9,6 +9,37 @@ class Player(object):
     def __init__(self, name: str, role: "GameCharacter"):
         self.name: str = name
         self.role: GameCharacter = role
+    
+    def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
+        return self.role.night_action(players)
+
+    def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> "SanitizedPlayer":
+        return self.role.daytime_behavior(players)
+
+    def sanitize(self) -> "SanitizedPlayer":
+        return SanitizedPlayer(self)
+
+    def __eq__(self, other: Any) -> bool:
+        return all((
+            self.name == other.name,
+            self.role is other.role
+        ))
+
+
+    def __hash__(self):
+        return hash((self.name, self.role))
+
+
+class SanitizedPlayer(object):
+
+    def __init__(self, player: Player):
+        self.name: str = player.name
+
+    def __eq__(self, other: Any) -> bool:
+        return self is other
+
+    def __hash__(self):
+        return id(self)
 
 
 class GameCharacter(ABC):
@@ -31,11 +62,11 @@ class GameCharacter(ABC):
         pass
 
     @abstractmethod
-    def night_action(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         pass
 
     @abstractmethod
-    def daytime_behavior(self, players: Sequence[Player]) -> Player:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         pass
 
     @abstractmethod
@@ -48,10 +79,10 @@ class Werewolf(GameCharacter):
     def prerequisites(self) -> Set[Type[GameCharacter]]:
         return set()
 
-    def night_action(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return random.choice(players)
 
-    def daytime_behavior(self, players: Sequence[Player]) -> Player:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         return random.choice(players)
 
     def __str__(self):
@@ -63,10 +94,10 @@ class Villager(GameCharacter):
     def prerequisites(self) -> Set[Type[GameCharacter]]:
         return set((Werewolf,))
 
-    def night_action(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return random.choice(players)
 
-    def daytime_behavior(self, players: Sequence[Player]) -> Player:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         return random.choice(players)
 
     def __str__(self):
@@ -89,11 +120,11 @@ class Hive(ABC):
         self.players = self.players.union(players)
 
     @abstractmethod
-    def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         pass
 
     @abstractmethod
-    def day_consensus(self, players: Sequence[Player]) -> Player:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         pass
 
 class WholeGameHive(Hive):
@@ -103,33 +134,33 @@ class WholeGameHive(Hive):
     implemented.
     """
 
-    def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
-    def day_consensus(self, players: Sequence[Player]) -> Player:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         potato: Player = random.choice(list(self.players))
-        return potato.role.daytime_behavior(players)
+        return potato.daytime_behavior(players)
 
 
 class WerewolfHive(Hive):
 
-    def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         potato: Player = random.choice(list(self.players))
-        return potato.role.night_action(players)
+        return potato.night_action(players)
 
-    def day_consensus(self, players: Sequence[Player]) -> Player:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         potato: Player = random.choice(list(self.players))
-        return potato.role.daytime_behavior(players)
+        return potato.daytime_behavior(players)
 
 
 class VillagerHive(Hive):
 
-    def night_consensus(self, players: Sequence[Player]) -> Optional[Player]:
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return None
 
-    def day_consensus(self, players: Sequence[Player]) -> Player:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         potato: Player = random.choice(list(self.players))
-        return potato.role.daytime_behavior(players)
+        return potato.daytime_behavior(players)
 
 
 CHARACTER_HIVE_MAPPING: Dict[Type["GameCharacter"], Type["Hive"]] = {
