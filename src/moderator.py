@@ -30,8 +30,15 @@ class Moderator(object):
     def __game_on(self):
         return self.villager_count > self.werewolf_count and self.werewolf_count > 0
 
-    def __batch_sanitize(self) -> Sequence[SanitizedPlayer]:
-        return [self.sanitation_manager[player] for player in self.players]
+    def __batch_sanitize(self, players: Iterable[Player]) -> Sequence[SanitizedPlayer]:
+        return [self.sanitation_manager[player] for player in players]
+
+    def __filter_members(self, char_class: Type[GameCharacter]) -> Set[Player]:
+        """
+        Return the list of players with those belonging to the specified class
+        _removed_.
+        """
+        return self.players - self.classes[char_class]
 
     def play(self) -> None:
         # Ideally we want this to topo-sort the included characters and then
@@ -42,7 +49,7 @@ class Moderator(object):
             print("Werewolves wake up!")
             spam: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
             spam.add_players(self.classes[Werewolf])
-            dead_by_wolf = spam.night_consensus(self.__batch_sanitize())
+            dead_by_wolf = spam.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
                 role_of_the_dead = self.player_memory[dead_by_wolf].role
@@ -61,7 +68,7 @@ class Moderator(object):
                     break
 
                 print("Vote now who to lynch...")
-                lynched = self.whole_game_hive.day_consensus(self.__batch_sanitize())
+                lynched = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
                 role_of_the_lynched = self.player_memory[lynched].role
 
                 print("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))

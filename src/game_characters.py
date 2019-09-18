@@ -22,9 +22,14 @@ class Player(object):
             self.role is other.role
         ))
 
-
     def __hash__(self):
         return hash((self.name, self.role))
+    
+    def __str__(self):
+        return "%s, %s" % (self.name, self.role)
+    
+    def __repr__(self):
+        return str(self)
 
 
 class SanitizedPlayer(object):
@@ -37,6 +42,12 @@ class SanitizedPlayer(object):
 
     def __hash__(self):
         return id(self)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return str(self)
 
 
 class GameCharacter(ABC):
