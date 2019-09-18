@@ -22,13 +22,13 @@ class Player(object):
             self.role is other.role
         ))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.role))
     
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s, %s" % (self.name, self.role)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
@@ -40,13 +40,13 @@ class SanitizedPlayer(object):
     def __eq__(self, other: Any) -> bool:
         return self is other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
