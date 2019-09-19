@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import Counter
 from typing import Any, Dict, Optional, Sequence, Set, Type
 
 import random
@@ -6,9 +7,21 @@ import random
 
 class Player(object):
 
-    def __init__(self, name: str, role: "GameCharacter"):
+    def __init__(
+        self,
+        name: str,
+        role: "GameCharacter",
+        aggression: float=0.3,
+        suggestibility: float=0.4
+    ):
         self.name: str = name
         self.role: GameCharacter = role
+        # number between [0, 1]; determines how likely is this player to suggest
+        # others for lynching.
+        self.aggression: float = aggression
+        # number between [0, 1]; determinees how likely the suggestion of others
+        # influence this players lynch vote.
+        self.suggestibility = suggestibility
     
     def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
         return self.role.night_action(players)
@@ -146,8 +159,13 @@ class WholeGameHive(Hive):
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
-        potato: Player = random.choice(list(self.players))
-        return potato.daytime_behavior(players)
+        vote_counter: Counter = Counter()
+        for player in self.players:
+            voted_for: SanitizedPlayer = player.daytime_behavior(players)
+            print("%s voted to lynch %s." % (player.name, voted_for.name))
+            vote_counter[voted_for] += 1
+        # For simplicity's sake, just take the 1 most common; no tie breaks.
+        return vote_counter.most_common(1)[0][0]
 
 
 class WerewolfHive(Hive):
