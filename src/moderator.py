@@ -1,5 +1,5 @@
 from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager
-from typing import Dict, Iterable, Sequence, Set, Type
+from typing import Dict, Iterable, Optional, Sequence, Set, Type
 
 
 class Moderator(object):
@@ -24,8 +24,9 @@ class Moderator(object):
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
 
-    def __kill_player(self, player) -> None:
+    def __kill_player(self, player: Player) -> None:
         self.players.remove(player)
+        self.whole_game_hive.players -= set((player,))
 
     def __game_on(self):
         return self.villager_count > self.werewolf_count and self.werewolf_count > 0
@@ -49,7 +50,7 @@ class Moderator(object):
             print("Werewolves wake up!")
             spam: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
             spam.add_players(self.classes[Werewolf])
-            dead_by_wolf = spam.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
+            dead_by_wolf: Optional[SanitizedPlayer] = spam.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
                 role_of_the_dead = self.player_memory[dead_by_wolf].role
@@ -62,13 +63,13 @@ class Moderator(object):
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
-                self.players.remove(self.player_memory[dead_by_wolf])
+                self.__kill_player(self.player_memory[dead_by_wolf])
 
                 if self.villager_count < self.werewolf_count:
                     break
 
                 print("Vote now who to lynch...")
-                lynched = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                lynched: SanitizedPlayer = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
                 role_of_the_lynched = self.player_memory[lynched].role
 
                 print("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
@@ -77,7 +78,7 @@ class Moderator(object):
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
-                self.players.remove(self.player_memory[lynched])
+                self.__kill_player(self.player_memory[lynched])
 
         if self.villager_count < self.werewolf_count:
             print("The werewolves won!")
