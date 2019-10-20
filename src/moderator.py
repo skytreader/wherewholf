@@ -40,6 +40,9 @@ class Moderator(object):
         _removed_.
         """
         return self.players - self.classes[char_class]
+    
+    def is_me(self, player: Player, splayer: SanitizedPlayer) -> bool:
+        return self.player_memory[splayer] == player
 
     def play(self) -> None:
         # Ideally we want this to topo-sort the included characters and then

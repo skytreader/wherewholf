@@ -19,8 +19,9 @@ class Player(object):
         # number between [0, 1]; determines how likely is this player to suggest
         # others for lynching.
         self.aggression: float = aggression
-        # number between [0, 1]; determinees how likely the suggestion of others
-        # influence this players lynch vote.
+        # number between [0, 1]; determines how likely the suggestion of others
+        # influence this player's vote. This applies for any instance where a
+        # player needs to participate in consensus.
         self.suggestibility = suggestibility
     
     def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
@@ -28,6 +29,10 @@ class Player(object):
 
     def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> "SanitizedPlayer":
         return self.role.daytime_behavior(players)
+
+    def accept_vote(self, voted_for: "SanitizedPlayer") -> bool:
+        vote_accepted = random.random()
+        return vote_accepted <= self.suggestibility
 
     def __eq__(self, other: Any) -> bool:
         return all((
@@ -140,6 +145,14 @@ class Hive(ABC):
     def add_players(self, players: Set[Player]):
         self.players = self.players.union(players)
 
+    @property
+    def consensus(self) -> int:
+        """
+        For this Hive (implementation), how many hive members must agreee before
+        we call a consensus?
+        """
+        return int(len(self.players) / 2)
+
     @abstractmethod
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         pass
@@ -147,6 +160,7 @@ class Hive(ABC):
     @abstractmethod
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         pass
+
 
 class WholeGameHive(Hive):
     """
@@ -171,8 +185,25 @@ class WholeGameHive(Hive):
 class WerewolfHive(Hive):
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        potato: Player = random.choice(list(self.players))
-        return potato.night_action(players)
+        consensus_count: int = 0
+        suggestion: Optional[SanitizedPlayer] = None
+
+        while consensus_count < self.consensus:
+            # Pick a random Werewolf to create an initial suggestion.
+            potato: Player = random.choice(list(self.players))
+            suggestion = potato.night_action(players)
+            print("%s suggested to kill %s" % (potato, suggestion))
+            for hive_member in self.players:
+                if hive_member is not potato and suggestion is not None:
+                    consensus_count += (
+                        1 if hive_member.accept_vote(suggestion) else 0
+                    )
+
+            if consensus_count < self.consensus:
+                print("Suggestion not accepted")
+            else:
+                print("Suggestion accepted")
+        return suggestion
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         potato: Player = random.choice(list(self.players))
