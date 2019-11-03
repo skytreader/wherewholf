@@ -3,6 +3,10 @@ from collections import Counter
 from typing import Any, Dict, Optional, Sequence, Set, Type
 
 import random
+import logging
+
+
+CONFIGURED_LOGGERS = {}
 
 
 class Player(object):
@@ -23,6 +27,21 @@ class Player(object):
         # influence this player's vote. This applies for any instance where a
         # player needs to participate in consensus.
         self.suggestibility = suggestibility
+        self.logger = logging.getLogger("Player")
+        self.__configure_logger()
+
+    def __configure_logger(self, _cfg=None):
+        global CONFIGURED_LOGGERS
+        if CONFIGURED_LOGGERS.get("Player") is None:
+            cfg = _cfg if _cfg is not None else {}
+            log_level = cfg.get("logLevel", "INFO")
+            self.logger.setLevel(logging.getLevelName(log_level))
+
+            log_format = cfg.get("logFormat", "%(asctime)s - %(levelname)s - %(message)s")
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter(log_format))
+            self.logger.addHandler(handler)
+            CONFIGURED_LOGGERS["Player"] = True
     
     def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
         return self.role.night_action(players)
@@ -138,6 +157,21 @@ class Hive(ABC):
 
     def __init__(self):
         self.players: Set[Player] = set()
+        self.logger = logging.getLogger("Hive")
+        self.__configure_logger()
+
+    def __configure_logger(self, _cfg=None):
+        global CONFIGURED_LOGGERS
+        if CONFIGURED_LOGGERS.get("Hive") is None:
+            cfg = _cfg if _cfg is not None else {}
+            log_level = cfg.get("logLevel", "INFO")
+            self.logger.setLevel(logging.getLevelName(log_level))
+
+            log_format = cfg.get("logFormat", "%(asctime)s - %(levelname)s - %(message)s")
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter(log_format))
+            self.logger.addHandler(handler)
+            CONFIGURED_LOGGERS["Hive"] = True
     
     def add_player(self, player: Player):
         self.players.add(player)
@@ -176,13 +210,16 @@ class WholeGameHive(Hive):
         vote_counter: Counter = Counter()
         for player in self.players:
             voted_for: SanitizedPlayer = player.daytime_behavior(players)
-            print("%s voted to lynch %s." % (player.name, voted_for.name))
+            self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
             vote_counter[voted_for] += 1
         # For simplicity's sake, just take the 1 most common; no tie breaks.
         return vote_counter.most_common(1)[0][0]
 
 
 class WerewolfHive(Hive):
+
+    def __init__(self):
+        super().__init__()
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         consensus_count: int = 0
@@ -192,7 +229,7 @@ class WerewolfHive(Hive):
             # Pick a random Werewolf to create an initial suggestion.
             potato: Player = random.choice(list(self.players))
             suggestion = potato.night_action(players)
-            print("%s suggested to kill %s" % (potato, suggestion))
+            self.logger.info("%s suggested to kill %s" % (potato, suggestion))
             for hive_member in self.players:
                 if hive_member is not potato and suggestion is not None:
                     consensus_count += (
@@ -200,9 +237,9 @@ class WerewolfHive(Hive):
                     )
 
             if consensus_count < self.consensus:
-                print("Suggestion not accepted")
+                self.logger.info("Suggestion not accepted")
             else:
-                print("Suggestion accepted")
+                self.logger.info("Suggestion accepted")
         return suggestion
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:

@@ -1,6 +1,8 @@
 from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager
 from typing import Dict, Iterable, Optional, Sequence, Set, Type
 
+import logging
+
 
 class Moderator(object):
 
@@ -23,6 +25,18 @@ class Moderator(object):
         self.villager_count: int = len(self.classes.get(Villager, []))
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
+        self.logger = logging.getLogger("moderator")
+        self.__configure_logger()
+
+    def __configure_logger(self, _cfg=None):
+        cfg = _cfg if _cfg is not None else {}
+        log_level = cfg.get("logLevel", "INFO")
+        self.logger.setLevel(logging.getLevelName(log_level))
+
+        log_format = cfg.get("logFormat", "%(asctime)s - %(levelname)s - %(message)s")
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(log_format))
+        self.logger.addHandler(handler)
 
     def __kill_player(self, player: Player) -> None:
         self.players.remove(player)
@@ -49,16 +63,16 @@ class Moderator(object):
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
         while self.__game_on():
-            print("The village goes to sleep...")
-            print("Werewolves wake up!")
+            self.logger.info("The village goes to sleep...")
+            self.logger.info("Werewolves wake up!")
             spam: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
             spam.add_players(self.classes[Werewolf])
             dead_by_wolf: Optional[SanitizedPlayer] = spam.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
                 role_of_the_dead = self.player_memory[dead_by_wolf].role
-                print("Night has ended and the village awakes...")
-                print("The werewolves killed %s, a %s!" % (
+                self.logger.info("Night has ended and the village awakes...")
+                self.logger.info("The werewolves killed %s, a %s!" % (
                     dead_by_wolf.name, role_of_the_dead
                 ))
                 
@@ -71,11 +85,11 @@ class Moderator(object):
                 if self.villager_count < self.werewolf_count:
                     break
 
-                print("Vote now who to lynch...")
+                self.logger.info("Vote now who to lynch...")
                 lynched: SanitizedPlayer = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
                 role_of_the_lynched = self.player_memory[lynched].role
 
-                print("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
+                self.logger.info("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
 
                 if type(role_of_the_lynched) == Villager:
                     self.villager_count -= 1
@@ -84,6 +98,6 @@ class Moderator(object):
                 self.__kill_player(self.player_memory[lynched])
 
         if self.villager_count < self.werewolf_count:
-            print("The werewolves won!")
+            self.logger.info("The werewolves won!")
         elif self.werewolf_count == 0:
-            print("The villagers won!")
+            self.logger.info("The villagers won!")
