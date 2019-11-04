@@ -16,7 +16,8 @@ class Player(object):
         name: str,
         role: "GameCharacter",
         aggression: float=0.3,
-        suggestibility: float=0.4
+        suggestibility: float=0.4,
+        persuasiveness: float=0.5
     ):
         self.name: str = name
         self.role: GameCharacter = role
@@ -27,6 +28,9 @@ class Player(object):
         # influence this player's vote. This applies for any instance where a
         # player needs to participate in consensus.
         self.suggestibility = suggestibility
+        # determines how likely this player is to persuade others in hive
+        # actions. Can also be a measure of how good this player is at lying.
+        self.persuasiveness = persuasiveness
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
@@ -156,7 +160,10 @@ class Hive(ABC):
     """
 
     def __init__(self):
+        # These are the players included in the hive
         self.players: Set[Player] = set()
+        # Set of _all_ dead players
+        self.dead_players: Set[Player] = set()
         self.logger: logging.Logger = logging.getLogger("Hive")
         self.__configure_logger()
 
@@ -179,6 +186,12 @@ class Hive(ABC):
     def add_players(self, players: Set[Player]):
         self.players = self.players.union(players)
 
+    def notify_player_death(self, player: Player):
+        self.logger.debug("%s learned of %s death" % (
+            self.__class__.__name__, player
+        ))
+        self.dead_players.add(player)
+
     @property
     def consensus(self) -> int:
         """
@@ -189,10 +202,18 @@ class Hive(ABC):
 
     @abstractmethod
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        """
+        Given the players currently in the game, this hive must decide on their
+        night action for this turn.
+        """
         pass
 
     @abstractmethod
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+        """
+        Given the list of players still in the game, this hive must decide on
+        their day action for this turn.
+        """
         pass
 
 
@@ -208,7 +229,8 @@ class WholeGameHive(Hive):
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         vote_counter: Counter = Counter()
-        for player in self.players:
+        alive_players: Set[Player] = self.players - self.dead_players
+        for player in alive_players:
             voted_for: SanitizedPlayer = player.daytime_behavior(players)
             self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
             vote_counter[voted_for] += 1
@@ -224,10 +246,11 @@ class WerewolfHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         consensus_count: int = 0
         suggestion: Optional[SanitizedPlayer] = None
+        alive_players: Set[Player]  = self.players - self.dead_players
 
         while consensus_count < self.consensus:
             # Pick a random Werewolf to create an initial suggestion.
-            potato: Player = random.choice(list(self.players))
+            potato: Player = random.choice(list(alive_players))
             suggestion = potato.night_action(players)
             self.logger.info("%s suggested to kill %s" % (potato, suggestion))
             for hive_member in self.players:

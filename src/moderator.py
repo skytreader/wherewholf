@@ -28,6 +28,8 @@ class Moderator(object):
         self.logger: logging.Logger = logging.getLogger("moderator")
         self.__configure_logger()
 
+        self.hives: Iterable[Hive] = [self.whole_game_hive]
+
     def __configure_logger(self, _cfg=None):
         cfg = _cfg if _cfg is not None else {}
         log_level = cfg.get("logLevel", "INFO")
@@ -40,7 +42,8 @@ class Moderator(object):
 
     def __kill_player(self, player: Player) -> None:
         self.players.remove(player)
-        self.whole_game_hive.players -= set((player,))
+        for hive in self.hives:
+            hive.notify_player_death(player)
 
     def __game_on(self):
         return self.villager_count > self.werewolf_count and self.werewolf_count > 0
@@ -62,12 +65,14 @@ class Moderator(object):
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
+        ww_hive: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
+        ww_hive.add_players(self.classes[Werewolf])
+
+        self.hives.append(ww_hive)
         while self.__game_on():
             self.logger.info("The village goes to sleep...")
             self.logger.info("Werewolves wake up!")
-            spam: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
-            spam.add_players(self.classes[Werewolf])
-            dead_by_wolf: Optional[SanitizedPlayer] = spam.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
+            dead_by_wolf: Optional[SanitizedPlayer] = ww_hive.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
                 role_of_the_dead = self.player_memory[dead_by_wolf].role
