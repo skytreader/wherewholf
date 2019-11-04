@@ -6,7 +6,7 @@ import random
 import logging
 
 
-CONFIGURED_LOGGERS = {}
+CONFIGURED_LOGGERS: Dict[str, Any] = {}
 
 
 class Player(object):
@@ -157,7 +157,7 @@ class Hive(ABC):
 
     def __init__(self):
         self.players: Set[Player] = set()
-        self.logger = logging.getLogger("Hive")
+        self.logger: logging.Logger = logging.getLogger("Hive")
         self.__configure_logger()
 
     def __configure_logger(self, _cfg=None):

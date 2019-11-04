@@ -25,7 +25,7 @@ class Moderator(object):
         self.villager_count: int = len(self.classes.get(Villager, []))
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
-        self.logger = logging.getLogger("moderator")
+        self.logger: logging.Logger = logging.getLogger("moderator")
         self.__configure_logger()
 
     def __configure_logger(self, _cfg=None):
