@@ -51,7 +51,11 @@ class Player(object):
         return self.role.night_action(players)
 
     def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> "SanitizedPlayer":
-        return self.role.daytime_behavior(players)
+        candidate: "SanitizedPlayer" = self.role.daytime_behavior(players)
+        while SanitizedPlayer.is_the_same_player(self, candidate):
+            candidate = self.role.daytime_behavior(players)
+
+        return candidate
 
     def accept_vote(self, voted_for: "SanitizedPlayer") -> bool:
         vote_accepted = random.random()
@@ -100,6 +104,13 @@ class SanitizedPlayer(object):
     @staticmethod
     def recover_player_identity(splayer: "SanitizedPlayer") -> Player:
         return SanitizedPlayer.__PLAYER_MEMORY[splayer]
+
+    @staticmethod
+    def is_the_same_player(player: Player, splayer: "SanitizedPlayer") -> bool:
+        _sanitize_player = SanitizedPlayer.__SANITATION_CACHE.get(player)
+        _actual_player = SanitizedPlayer.__PLAYER_MEMORY.get(splayer)
+
+        return player is _actual_player and splayer is _sanitize_player
 
     def __eq__(self, other: Any) -> bool:
         return self is other
