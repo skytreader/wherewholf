@@ -74,9 +74,32 @@ class Player(object):
 
 
 class SanitizedPlayer(object):
+    
+    __SANITATION_CACHE: Dict[Player, "SanitizedPlayer"] = {}
+    __PLAYER_MEMORY: Dict["SanitizedPlayer", Player] = {}
 
     def __init__(self, player: Player):
+        """
+        NOTE: DO NOT USE THIS CONSTRUCTOR! To sanitize players, use the
+        `sanitize` static method instead.
+        """
         self.name: str = player.name
+
+    @staticmethod
+    def sanitize(player: Player) -> "SanitizedPlayer":
+        exists: Optional[SanitizedPlayer] = SanitizedPlayer.__SANITATION_CACHE.get(player)
+
+        if exists:
+            return exists
+        else:
+            sanitized = SanitizedPlayer(player)
+            SanitizedPlayer.__SANITATION_CACHE[player] = sanitized
+            SanitizedPlayer.__PLAYER_MEMORY[sanitized] = player
+            return sanitized
+
+    @staticmethod
+    def recover_player_identity(splayer: "SanitizedPlayer") -> Player:
+        return SanitizedPlayer.__PLAYER_MEMORY[splayer]
 
     def __eq__(self, other: Any) -> bool:
         return self is other

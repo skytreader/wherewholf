@@ -1,5 +1,5 @@
 from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager
-from typing import Dict, Iterable, Optional, Sequence, Set, Type
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Type
 
 import logging
 
@@ -8,14 +8,9 @@ class Moderator(object):
 
     def __init__(self, players: Set[Player]):
         self.players: Set[Player] = players
-        self.player_memory: Dict[SanitizedPlayer, Player] = {}
-        self.sanitation_manager: Dict[Player, SanitizedPlayer] = {}
         self.classes: Dict[Type[GameCharacter], Set[Player]] = {}
 
         for player in players:
-            sanitized: SanitizedPlayer = SanitizedPlayer(player)
-            self.player_memory[sanitized] = player
-            self.sanitation_manager[player] = sanitized
             if type(player.role) in self.classes:
                 self.classes[type(player.role)].add(player)
             else:
@@ -28,7 +23,7 @@ class Moderator(object):
         self.logger: logging.Logger = logging.getLogger("moderator")
         self.__configure_logger()
 
-        self.hives: Iterable[Hive] = [self.whole_game_hive]
+        self.hives: List[Hive] = [self.whole_game_hive]
 
     def __configure_logger(self, _cfg=None):
         cfg = _cfg if _cfg is not None else {}
@@ -49,7 +44,7 @@ class Moderator(object):
         return self.villager_count > self.werewolf_count and self.werewolf_count > 0
 
     def __batch_sanitize(self, players: Iterable[Player]) -> Sequence[SanitizedPlayer]:
-        return [self.sanitation_manager[player] for player in players]
+        return [SanitizedPlayer.sanitize(player) for player in players]
 
     def __filter_members(self, char_class: Type[GameCharacter]) -> Set[Player]:
         """
@@ -57,9 +52,6 @@ class Moderator(object):
         _removed_.
         """
         return self.players - self.classes[char_class]
-    
-    def is_me(self, player: Player, splayer: SanitizedPlayer) -> bool:
-        return self.player_memory[splayer] == player
 
     def play(self) -> None:
         # Ideally we want this to topo-sort the included characters and then
@@ -75,7 +67,7 @@ class Moderator(object):
             dead_by_wolf: Optional[SanitizedPlayer] = ww_hive.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
-                role_of_the_dead = self.player_memory[dead_by_wolf].role
+                role_of_the_dead = SanitizedPlayer.recover_player_identity(dead_by_wolf).role
                 self.logger.info("Night has ended and the village awakes...")
                 self.logger.info("The werewolves killed %s, a %s!" % (
                     dead_by_wolf.name, role_of_the_dead
@@ -85,14 +77,14 @@ class Moderator(object):
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
-                self.__kill_player(self.player_memory[dead_by_wolf])
+                self.__kill_player(SanitizedPlayer.recover_player_identity(dead_by_wolf))
 
                 if self.villager_count < self.werewolf_count:
                     break
 
                 self.logger.info("Vote now who to lynch...")
                 lynched: SanitizedPlayer = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
-                role_of_the_lynched = self.player_memory[lynched].role
+                role_of_the_lynched = SanitizedPlayer.recover_player_identity(lynched).role
 
                 self.logger.info("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
 
@@ -100,7 +92,7 @@ class Moderator(object):
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
-                self.__kill_player(self.player_memory[lynched])
+                self.__kill_player(SanitizedPlayer.recover_player_identity(lynched))
 
         if self.villager_count < self.werewolf_count:
             self.logger.info("The werewolves won!")
