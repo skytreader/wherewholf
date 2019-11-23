@@ -41,7 +41,7 @@ class Moderator(object):
             hive.notify_player_death(player)
 
     def __game_on(self):
-        return self.villager_count > self.werewolf_count and self.werewolf_count > 0
+        return self.villager_count >= self.werewolf_count and self.werewolf_count > 0 and not self.__is_standoff()
 
     def __batch_sanitize(self, players: Iterable[Player]) -> Sequence[SanitizedPlayer]:
         return [SanitizedPlayer.sanitize(player) for player in players]
@@ -104,3 +104,5 @@ class Moderator(object):
             self.logger.info("The villagers won!")
         elif self.__is_standoff():
             self.logger.info("It's a draw!")
+        else:
+            self.logger.error("Unknown endgame condition. Status: villagers=%s, werewolves=%s." % (self.villager_count, self.werewolf_count))

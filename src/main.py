@@ -11,6 +11,7 @@ if __name__ == "__main__":
     players.add(Player("Chad", Villager()))
     players.add(Player("JE", Villager()))
     players.add(Player("Gab", Villager()))
+    players.add(Player("Charles", Villager()))
 
     mod: Moderator = Moderator(players)
     mod.play()
