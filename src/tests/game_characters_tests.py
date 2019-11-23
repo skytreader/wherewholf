@@ -17,7 +17,7 @@ class InspectablePlayer(Player):
         super().__init__(name, role, aggression, suggestibility, persuasiveness)
         self.was_asked_for_daytime = False
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         self.was_asked_for_daytime = True
         return super().daytime_behavior(players)
 
