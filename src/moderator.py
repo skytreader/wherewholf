@@ -83,7 +83,8 @@ class Moderator(object):
                     break
 
                 self.logger.info("Vote now who to lynch...")
-                lynched: SanitizedPlayer = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                lynched: Optional[SanitizedPlayer] = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                assert lynched is not None
                 role_of_the_lynched = SanitizedPlayer.recover_player_identity(lynched).role
 
                 self.logger.info("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))

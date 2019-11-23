@@ -1,6 +1,6 @@
 import unittest
 
-from ..game_characters import Player, SanitizedPlayer, Villager, Werewolf, WholeGameHive
+from ..game_characters import GameCharacter, Player, SanitizedPlayer, Villager, Werewolf, WholeGameHive
 from typing import Sequence
 
 
@@ -9,7 +9,7 @@ class InspectablePlayer(Player):
     def __init__(
         self,
         name: str,
-        role: "GameCharacter",
+        role: GameCharacter,
         aggression: float=0.3,
         suggestibility: float=0.4,
         persuasiveness: float=0.5
@@ -19,7 +19,7 @@ class InspectablePlayer(Player):
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         self.was_asked_for_daytime = True
-        return super().day_consensus(players)
+        return super().daytime_behavior(players)
 
 
 class PlayerTest(unittest.TestCase):
@@ -52,7 +52,7 @@ class WholeGameHiveTest(unittest.TestCase):
         self.players.add(Player("JE", Villager()))
         self.players.add(Player("Gab", Villager()))
 
-        self.whole_game_hive = WholeGameHive()
+        self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
 
     def test_player_death(self):

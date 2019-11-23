@@ -243,12 +243,12 @@ class Hive(ABC):
         pass
 
     @abstractmethod
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         """
         Given the list of players still in the game, this hive must decide on
         their day action for this turn.
         """
-        pass
+        raise NotImplemented("This faction will not reveal itself!")
 
 
 class WholeGameHive(Hive):
@@ -261,7 +261,7 @@ class WholeGameHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         vote_counter: Counter = Counter()
         alive_players: Set[Player] = self.players - self.dead_players
         for player in alive_players:
@@ -299,9 +299,8 @@ class WerewolfHive(Hive):
                 self.logger.info("Suggestion accepted")
         return suggestion
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
-        potato: Player = random.choice(list(self.players))
-        return potato.daytime_behavior(players)
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        raise NotImplemented("This faction will not reveal itself!")
 
 
 class VillagerHive(Hive):
@@ -309,7 +308,7 @@ class VillagerHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return None
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         potato: Player = random.choice(list(self.players))
         return potato.daytime_behavior(players)
 
