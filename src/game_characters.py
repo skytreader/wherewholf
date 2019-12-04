@@ -57,9 +57,15 @@ class Player(object):
 
         return candidate
 
-    def accept_vote(self, voted_for: "SanitizedPlayer") -> bool:
+    def accept_suggestion(
+        self,
+        voted_for: "SanitizedPlayer",
+        suggested_by: "SanitizedPlayer"
+    ) -> bool:
         vote_accepted = random.random()
-        return vote_accepted <= self.suggestibility
+        return vote_accepted <= (
+            self.suggestibility * suggested_by.aggression * suggested_by.persuasiveness
+        )
 
     def __eq__(self, other: Any) -> bool:
         return all((
@@ -84,10 +90,13 @@ class SanitizedPlayer(object):
 
     def __init__(self, player: Player):
         """
-        NOTE: DO NOT USE THIS CONSTRUCTOR! To sanitize players, use the
-        `sanitize` static method instead.
+        NOTE: DO NOT USE THIS CONSTRUCTOR! This class "caches" SanitizedPlayers
+        for speed and tracking and it messy to do that in the constructor. To
+        sanitize players, use the `sanitize` static method instead.
         """
         self.name: str = player.name
+        self.aggression: float = player.aggression
+        self.suggestibility: float = player.suggestibility
 
     @staticmethod
     def sanitize(player: Player) -> "SanitizedPlayer":
@@ -290,7 +299,7 @@ class WerewolfHive(Hive):
             for hive_member in self.players:
                 if hive_member is not potato and suggestion is not None:
                     consensus_count += (
-                        1 if hive_member.accept_vote(suggestion) else 0
+                        1 if hive_member.accept_suggestion(suggestion, potato) else 0
                     )
 
             if consensus_count < self.consensus:
