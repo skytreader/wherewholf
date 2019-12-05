@@ -64,7 +64,7 @@ class Player(object):
     ) -> bool:
         vote_accepted = random.random()
         return vote_accepted <= (
-            self.suggestibility * suggested_by.aggression * suggested_by.persuasiveness
+            self.suggestibility * suggested_by.persuasiveness
         )
 
     def __eq__(self, other: Any) -> bool:
@@ -96,7 +96,7 @@ class SanitizedPlayer(object):
         """
         self.name: str = player.name
         self.aggression: float = player.aggression
-        self.suggestibility: float = player.suggestibility
+        self.persuasiveness : float = player.persuasiveness
 
     @staticmethod
     def sanitize(player: Player) -> "SanitizedPlayer":
@@ -299,7 +299,7 @@ class WerewolfHive(Hive):
             for hive_member in self.players:
                 if hive_member is not potato and suggestion is not None:
                     consensus_count += (
-                        1 if hive_member.accept_suggestion(suggestion, potato) else 0
+                        1 if hive_member.accept_suggestion(suggestion, SanitizedPlayer.sanitize(potato)) else 0
                     )
 
             if consensus_count < self.consensus:

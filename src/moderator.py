@@ -1,8 +1,15 @@
+from enum import Enum
 from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Type
 
 import logging
 
+
+class EndGameState(Enum):
+    UNKNOWN_CONDITION = -1
+    WEREWOLVES_WON = 1
+    VILLAGERS_WON = 2
+    DRAW = 3
 
 class Moderator(object):
 
@@ -56,7 +63,7 @@ class Moderator(object):
     def __is_standoff(self):
         return self.villager_count == 1 and self.werewolf_count == 1
 
-    def play(self) -> None:
+    def play(self) -> "EndGameState":
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
@@ -100,9 +107,13 @@ class Moderator(object):
 
         if self.villager_count < self.werewolf_count:
             self.logger.info("The werewolves won!")
+            return EndGameState.WEREWOLVES_WON
         elif self.werewolf_count == 0:
             self.logger.info("The villagers won!")
+            return EndGameState.VILLAGERS_WON
         elif self.__is_standoff():
             self.logger.info("It's a draw!")
+            return EndGameState.DRAW
         else:
             self.logger.error("Unknown endgame condition. Status: villagers=%s, werewolves=%s." % (self.villager_count, self.werewolf_count))
+            return EndGameState.UNKNOWN_CONDITION
