@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import Counter
 from typing import Any, Dict, Optional, Sequence, Set, Type
+from src.pubsub import PubSubBroker
 
 import random
 import logging
@@ -202,11 +203,12 @@ class Hive(ABC):
     and their collective decisions throughout the game.
     """
 
-    def __init__(self):
+    def __init__(self, pubsub_broker: Optional[PubSubBroker]=None):
         # These are the players included in the hive
         self.players: Set[Player] = set()
         # Set of _all_ dead players
         self.dead_players: Set[Player] = set()
+        self.pubsub_broker: Optional[PubSubBroker] = pubsub_broker
         self.logger: logging.Logger = logging.getLogger("Hive")
         self.__configure_logger()
 
@@ -222,6 +224,10 @@ class Hive(ABC):
             handler.setFormatter(logging.Formatter(log_format))
             self.logger.addHandler(handler)
             CONFIGURED_LOGGERS["Hive"] = True
+
+    def _publish_event(self, event_type: str, body: str):
+        if self.pubsub_broker:
+            self.pubsub_broker.broadcast_message(event_type, body)
     
     def add_player(self, player: Player):
         self.players.add(player)
@@ -303,6 +309,7 @@ class WerewolfHive(Hive):
                     )
 
             if consensus_count < self.consensus:
+                self._publish_event("CONSENSUS_NOT_REACHED", "werewolves")
                 self.logger.info("Suggestion not accepted")
             else:
                 self.logger.info("Suggestion accepted")
