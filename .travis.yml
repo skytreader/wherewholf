@@ -3,4 +3,6 @@ python:
     - "3.7"
 before_script:
     - "pip install -r requirements.txt"
+    - "mypy --ignore-missing-imports src"
+    - "mypy --ignore-missing-imports laboratory.py"
 script: pytest
