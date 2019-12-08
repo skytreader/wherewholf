@@ -13,7 +13,7 @@ class EndGameState(Enum):
 
 class Moderator(object):
 
-    def __init__(self, players: Set[Player]):
+    def __init__(self, players: Set[Player], log_discriminant: Optional[str]=None):
         self.players: Set[Player] = players
         self.classes: Dict[Type[GameCharacter], Set[Player]] = {}
 
@@ -27,7 +27,9 @@ class Moderator(object):
         self.villager_count: int = len(self.players) - self.werewolf_count
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
-        self.logger: logging.Logger = logging.getLogger("moderator")
+        self.logger: logging.Logger = logging.getLogger(
+            "moderator%s" % (log_discriminant if log_discriminant else "")
+        )
         self.__configure_logger()
 
         self.hives: List[Hive] = [self.whole_game_hive]

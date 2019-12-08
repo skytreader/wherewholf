@@ -22,14 +22,14 @@ class Experiment(object):
 
         self.game_iterations = game_iterations
     
-    def __make_player(self, role: str, count: int) -> Player:
+    def __make_player(self, role: GameCharacter, count: int) -> Player:
         return Player("%s Player #%s" % (role, count), role)
 
     def run(self) -> Counter:
         wins: Counter = Counter()
 
-        for _ in range(self.game_iterations):
-            moderator = Moderator(self.werewolves | self.villagers)
+        for i in range(self.game_iterations):
+            moderator = Moderator(self.werewolves | self.villagers, str(i))
             wins.update([moderator.play()])
 
         return wins
