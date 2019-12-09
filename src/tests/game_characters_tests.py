@@ -1,7 +1,10 @@
 import unittest
 
-from ..game_characters import GameCharacter, Player, SanitizedPlayer, Villager, Werewolf, WholeGameHive
-from typing import Sequence
+from ..game_characters import (
+    GameCharacter, Hive, Player, SanitizedPlayer, Villager, Werewolf,
+    WholeGameHive
+)
+from typing import Optional, Sequence
 
 
 class InspectablePlayer(Player):
@@ -22,6 +25,17 @@ class InspectablePlayer(Player):
         return super().daytime_behavior(players)
 
 
+class DummyHive(Hive):
+
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        print("Just a dummy hive...")
+        return None
+
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        print("Just a dummy hive...")
+        return None
+
+
 class PlayerTest(unittest.TestCase):
 
     def setUp(self):
@@ -39,6 +53,31 @@ class PlayerTest(unittest.TestCase):
         for _ in range(100):
             lynch: SanitizedPlayer = self.me.daytime_behavior(self.sanitized)
             self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
+
+
+class HiveTest(unittest.TestCase):
+
+    def setUp(self):
+        self.some_hive: Hive = DummyHive()
+        self.christine = Player("Christine", Werewolf(), aggression=0.9)
+        self.chad = Player("Chad", Villager(), aggression=0.7)
+        self.josh = Player("Josh", Werewolf, aggression=0.65)
+
+        self.some_hive.add_player(self.christine)
+        self.some_hive.add_player(self.chad)
+        self.some_hive.add_player(self.josh)
+        self.some_hive.add_player(Player("JE", Villager()))
+        self.some_hive.add_player(Player("Alvin", Villager(), aggression=0.1))
+    
+    def test_get_most_aggressive(self):
+        expected_top_aggressors = (
+            self.christine, self.chad, self.josh
+        )
+        actual_aggressors = self.some_hive._get_most_aggressive(3)
+        self.assertEqual(len(expected_top_aggressors), len(actual_aggressors))
+
+        for eta, aa in zip(expected_top_aggressors, actual_aggressors):
+            self.assertEqual(eta, aa)
 
 
 class WholeGameHiveTest(unittest.TestCase):
