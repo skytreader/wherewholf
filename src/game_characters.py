@@ -234,7 +234,7 @@ class Hive(ABC):
         Return the n most aggressive members of this Hive, ordered descending
         with respect to aggression.
         """
-        player_list: List[Player] = list(self.players)
+        player_list: List[Player] = list(self.alive_players)
         player_list.sort(key=lambda p: p.aggression, reverse=True)
         return tuple(player_list[:n])
     
