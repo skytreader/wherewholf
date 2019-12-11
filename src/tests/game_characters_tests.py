@@ -78,6 +78,24 @@ class HiveTest(unittest.TestCase):
 
         for eta, aa in zip(expected_top_aggressors, actual_aggressors):
             self.assertEqual(eta, aa)
+    
+    def test_dead_is_not_aggressive(self):
+        # was not invited and will be dead
+        charles: Player = Player("Charles", Villager(), aggression=1)
+        self.some_hive.add_player(charles)
+        aggressors = self.some_hive._get_most_aggressive(3)
+        expected_top_aggressors = (
+            charles, self.christine, self.chad
+        )
+        self.assertEqual(expected_top_aggressors, aggressors)
+
+        # Goodbye Charles
+        self.some_hive.notify_player_death(charles)
+        aggressors = self.some_hive._get_most_aggressive(3)
+        expected_top_aggressors = (
+            self.christine, self.chad, self.josh
+        )
+        self.assertEqual(expected_top_aggressors, aggressors)
 
 
 class WholeGameHiveTest(unittest.TestCase):

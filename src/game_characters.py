@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Any, Dict, List, Optional, Sequence, Set, Type
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
 from src.pubsub import PubSubBroker
 
 import random
@@ -229,14 +229,14 @@ class Hive(ABC):
         if self.pubsub_broker:
             self.pubsub_broker.broadcast_message(event_type, body)
 
-    def _get_most_aggressive(self, n: int=3) -> Sequence:
+    def _get_most_aggressive(self, n: int=3) -> Tuple:
         """
         Return the n most aggressive members of this Hive, ordered descending
         with respect to aggression.
         """
         player_list: List[Player] = list(self.players)
         player_list.sort(key=lambda p: p.aggression, reverse=True)
-        return player_list[:n]
+        return tuple(player_list[:n])
     
     def add_player(self, player: Player):
         self.players.add(player)
