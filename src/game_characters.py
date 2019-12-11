@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from src.pubsub import PubSubBroker
 
 import random
@@ -229,7 +229,7 @@ class Hive(ABC):
         if self.pubsub_broker:
             self.pubsub_broker.broadcast_message(event_type, body)
 
-    def _get_most_aggressive(self, n: int=3) -> Tuple:
+    def _get_most_aggressive(self, n: int=3) -> Tuple[Player, ...]:
         """
         Return the n most aggressive members of this Hive, ordered descending
         with respect to aggression.
@@ -238,17 +238,21 @@ class Hive(ABC):
         player_list.sort(key=lambda p: p.aggression, reverse=True)
         return tuple(player_list[:n])
     
-    def add_player(self, player: Player):
+    def add_player(self, player: Player) -> None:
         self.players.add(player)
 
-    def add_players(self, players: Set[Player]):
+    def add_players(self, players: Set[Player]) -> None:
         self.players = self.players.union(players)
 
-    def notify_player_death(self, player: Player):
+    def notify_player_death(self, player: Player) -> None:
         self.logger.debug("%s learned of %s death" % (
             self.__class__.__name__, player
         ))
         self.dead_players.add(player)
+
+    @property
+    def alive_players(self) -> Iterable[Player]:
+        return set(self.players) - self.dead_players
 
     @property
     def consensus(self) -> int:

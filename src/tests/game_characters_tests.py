@@ -74,10 +74,7 @@ class HiveTest(unittest.TestCase):
             self.christine, self.chad, self.josh
         )
         actual_aggressors = self.some_hive._get_most_aggressive(3)
-        self.assertEqual(len(expected_top_aggressors), len(actual_aggressors))
-
-        for eta, aa in zip(expected_top_aggressors, actual_aggressors):
-            self.assertEqual(eta, aa)
+        self.assertEqual(expected_top_aggressors, actual_aggressors)
     
     def test_dead_is_not_aggressive(self):
         # was not invited and will be dead
