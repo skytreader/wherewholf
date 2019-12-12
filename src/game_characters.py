@@ -291,8 +291,7 @@ class WholeGameHive(Hive):
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         vote_counter: Counter = Counter()
-        alive_players: Set[Player] = self.players - self.dead_players
-        for player in alive_players:
+        for player in self.alive_players:
             voted_for: SanitizedPlayer = player.daytime_behavior(players)
             self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
             vote_counter[voted_for] += 1
@@ -308,11 +307,9 @@ class WerewolfHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         consensus_count: int = 0
         suggestion: Optional[SanitizedPlayer] = None
-        alive_players: Set[Player]  = self.players - self.dead_players
 
         while consensus_count < self.consensus:
-            # Pick a random Werewolf to create an initial suggestion.
-            potato: Player = random.choice(list(alive_players))
+            potato: Player = random.choice(self._get_most_aggressive())
             suggestion = potato.night_action(players)
             self.logger.info("%s suggested to kill %s" % (potato, suggestion))
             for hive_member in self.players:
