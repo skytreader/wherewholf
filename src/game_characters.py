@@ -92,7 +92,7 @@ class SanitizedPlayer(object):
     def __init__(self, player: Player):
         """
         NOTE: DO NOT USE THIS CONSTRUCTOR! This class "caches" SanitizedPlayers
-        for speed and tracking and it messy to do that in the constructor. To
+        for speed and tracking and it's messy to do that in the constructor. To
         sanitize players, use the `sanitize` static method instead.
         """
         self.name: str = player.name
