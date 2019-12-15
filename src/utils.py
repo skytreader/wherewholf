@@ -1,3 +1,9 @@
+"""
+Custom Counter class that takes ties into account in the `most_common` method.
+
+Note that the reference implementation for this is the Counter class in CPython
+3.7; 3.8 introduces syntactic changes that are not backwards-compatible to 3.7.
+"""
 from collections import Counter
 from collections.abc import Iterable as IterableBaseClass
 
@@ -22,8 +28,12 @@ class ValueIndex(object):
 
 class ValueTieCounter(Counter):
 
-    def __init__(self, items: Mapping[Any, int]):
-        self.internal_counter = Counter(items)
+    # NOTE The reference implementation does not declare a `self` parameter but
+    # splits `*args` via `self, *args = args` before `self` is even ever used.
+    # I would've done the same except that it feels wrong.
+    def __init__(self, *args, **kwds):
+        self.internal_counter = Counter()
+        self.internal_counter.update(*args, **kwds)
         self.value_tie_index: ValueIndex = ValueIndex()
 
     def elements(self) -> Iterator[Any]:
