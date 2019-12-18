@@ -14,6 +14,12 @@ import _collections_abc
 
 
 class ValueIndex(object):
+    """
+    Items that are not in the set are technically in index 0 but since there is
+    an infinite number of items not included in the set...
+
+    Behavior of such items are undefined as of yet.
+    """
 
     def __init__(self):
         self.value_index: Dict[int, List[Any]] = {}
@@ -78,5 +84,5 @@ class ValueTieCounter(Counter):
         iterable = args[0] if args else None
         if iterable is not None:
             if isinstance(iterable, _collections_abc.Mapping):
-                if self.internal_counter:
-                    pass
+                for elem, count in iterable.items():
+                    old_count = self.internal_counter[elem]
