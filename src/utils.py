@@ -36,6 +36,14 @@ class ValueTieCounter(Counter):
         self.internal_counter.update(*args, **kwds)
         self.value_tie_index: ValueIndex = ValueIndex()
 
+        for k, v in self.internal_counter.items():
+            self.value_tie_index.update_index(v, k)
+
+        super(ValueTieCounter, self).__init__()
+
+    def __getitem__(self, key: Any) -> int:
+        return self.internal_counter[key]
+
     def elements(self) -> Iterator[Any]:
         return self.internal_counter.elements()
 
