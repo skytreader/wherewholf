@@ -1,5 +1,6 @@
 """
 Custom Counter class that takes ties into account in the `most_common` method.
+Other than that, this should be a drop-in replacement for collections.Counter.
 
 Note that the reference implementation for this is the Counter class in CPython
 3.7; 3.8 introduces syntactic changes that are not backwards-compatible to 3.7.
@@ -29,6 +30,13 @@ class ValueIndex(object):
 
 
 class ValueTieCounter(Counter):
+    """
+    ACHTUNG! The idea is to keep this class as similar in behavior to
+    collections.Counter as much as possible, to the extent that it is a
+    drop-in replacement except for when behavior really differs as documented.
+    However, in practice, we implement just enough for it to be useable in
+    Wherewholf.
+    """
 
     # NOTE The reference implementation does not declare a `self` parameter but
     # splits `*args` via `self, *args = args` before `self` is even ever used.
