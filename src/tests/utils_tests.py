@@ -1,9 +1,18 @@
 import unittest
 
+from collections import Counter
 from ..utils import ValueTieCounter
 
 
 class ValueTieCounterTest(unittest.TestCase):
+
+    def test_falsey(self):
+        self.assertFalse(Counter())
+        self.assertFalse(ValueTieCounter())
+
+    def test_truthy(self):
+        self.assertTrue(Counter(a=1))
+        self.assertTrue(ValueTieCounter(a=1))
 
     def test_elements(self):
         minuend = ValueTieCounter(a=4, b=2, c=0, d=-2)

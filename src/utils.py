@@ -9,6 +9,8 @@ from collections.abc import Iterable as IterableBaseClass
 
 from typing import Any, Dict, Iterable, Iterator, Mapping, Set, Union
 
+import _collections_abc
+
 
 class ValueIndex(object):
 
@@ -44,6 +46,9 @@ class ValueTieCounter(Counter):
     def __getitem__(self, key: Any) -> int:
         return self.internal_counter[key]
 
+    def __bool__(self):
+        return bool(self.internal_counter)
+
     def elements(self) -> Iterator[Any]:
         return self.internal_counter.elements()
 
@@ -57,3 +62,13 @@ class ValueTieCounter(Counter):
             self.value_tie_index.update_index(
                 self.internal_counter[k], k
             )
+
+    def update(self, *args, **kwargs):
+        if len(args) > 1:
+            raise TypeError("expected at most 1 arguments, got %d" % len(args))
+        
+        iterable = args[0] if args else None
+        if iterable is not None:
+            if isinstance(iterable, _collections_abc.Mapping):
+                if self.internal_counter:
+                    pass
