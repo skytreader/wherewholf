@@ -8,7 +8,9 @@ Note that the reference implementation for this is the Counter class in CPython
 from collections import Counter
 from collections.abc import Iterable as IterableBaseClass
 
-from typing import Any, Dict, Iterable, Iterator, Mapping, Set, Union
+from typing import (
+    Any, Dict, Iterable, Iterator, List, Mapping, Optional, Set, Sequence, Tuple, Union
+)
 
 import _collections_abc
 
@@ -24,6 +26,9 @@ class ValueIndex(object):
     def __init__(self):
         self.value_index: Dict[int, Set[Any]] = {}
 
+    def __getitem__(self, key: int) -> Set[Any]:
+        return self.value_index[key]
+
     def update_index(self, value: int, reference: Any) -> None:
         if self.value_index.get(value):
             self.value_index[value].add(reference)
@@ -35,6 +40,9 @@ class ValueIndex(object):
 
         if reference in current_index:
             current_index.remove(reference)
+
+    def list_indices(self) -> Sequence[int]:
+        return tuple(self.value_index.keys())
 
 
 class ValueTieCounter(Counter):
@@ -112,3 +120,15 @@ class ValueTieCounter(Counter):
         
         if kwargs:
             self.update(kwargs)
+
+    def most_common(self, n: Optional[int]=None) -> List[Tuple[Any, int]]:
+        most_common: List[Tuple[Any, int]] = []
+        index_keys: Sequence[int] = self.value_tie_index.list_indices()
+        top = len(index_keys) if n is None else n
+        counts_present: Iterable[int] = sorted(index_keys, reverse=True)[0:top]
+        
+        for index in counts_present:
+            entries: Tuple[Any, ...] = tuple(self.value_tie_index[index])
+            most_common.extend([(e, index) for e in entries])
+
+        return most_common

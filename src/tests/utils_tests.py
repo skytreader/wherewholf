@@ -29,3 +29,21 @@ class ValueTieCounterTest(unittest.TestCase):
         c.update("witch")
         c.update(Counter("watch"))
         self.assertEqual(4, c["h"])
+
+    def test_most_common(self):
+        test_string = "".join((
+            "a" * 8,
+            "b" * 2,
+            "c" * 8,
+            "d" * 7,
+            "e" * 1,
+            "f" * 1,
+            "g" * 2
+        ))
+        c = ValueTieCounter(test_string)
+        top2 = c.most_common(2)
+        self.assertEqual(3, len(top2))
+        self.assertEqual(
+            (8, 8, 7),
+            tuple(_[1] for _ in top2)
+        )
