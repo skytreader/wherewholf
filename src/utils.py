@@ -22,7 +22,7 @@ class ValueIndex(object):
     """
 
     def __init__(self):
-        self.value_index: Dict[int, List[Any]] = {}
+        self.value_index: Dict[int, Set[Any]] = {}
 
     def update_index(self, value: int, reference: Any) -> None:
         if self.value_index.get(value):
@@ -31,8 +31,10 @@ class ValueIndex(object):
             self.value_index[value] = set((reference,))
 
     def remove_reference(self, index: int, reference: Any) -> None:
-        # TODO Handle when reference does not exist in index.
-        self.value_index[index].remove(reference)
+        current_index: Set[Any] = self.value_index.get(index, set())
+
+        if reference in current_index:
+            current_index.remove(reference)
 
 
 class ValueTieCounter(Counter):
@@ -77,12 +79,36 @@ class ValueTieCounter(Counter):
                 self.internal_counter[k], k
             )
 
+    def __index_counts(self):
+        for elem, count in self.internal_counter.items():
+            self.value_tie_index.update_index(count, elem)
+
     def update(self, *args, **kwargs):
         if len(args) > 1:
             raise TypeError("expected at most 1 arguments, got %d" % len(args))
         
-        iterable = args[0] if args else None
-        if iterable is not None:
-            if isinstance(iterable, _collections_abc.Mapping):
-                for elem, count in iterable.items():
+        possible_iterable = args[0] if args else None
+        if possible_iterable is not None:
+            if isinstance(possible_iterable, _collections_abc.Mapping):
+                # TODO if counter is empty, just copy in everything--if possible
+                for elem, count in possible_iterable.items():
                     old_count = self.internal_counter[elem]
+                    self.internal_counter[elem] += count
+                    self.value_tie_index.remove_reference(old_count, elem)
+                    self.value_tie_index.update_index(
+                        self.internal_counter[elem], elem
+                    )
+            else:
+                # Now we are sure it is an iterable
+                for elem in possible_iterable:
+                    old_count = self.internal_counter.get(elem, 0)
+                    self.internal_counter[elem] = old_count + 1
+                    self.value_tie_index.remove_reference(old_count, elem)
+                
+                # Invariant: After the loop, all the items in possible_iterable
+                # have been removed from value_tie_index. Thus, it is safe to
+                # just reindex everything.
+                self.__index_counts()
+        
+        if kwargs:
+            self.update(kwargs)

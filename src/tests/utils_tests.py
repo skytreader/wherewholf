@@ -23,3 +23,9 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual(0, minuend["b"])
         self.assertEqual(-3, minuend["c"])
         self.assertEqual(-6, minuend["d"])
+    
+    def test_update(self):
+        c = ValueTieCounter("which")
+        c.update("witch")
+        c.update(Counter("watch"))
+        self.assertEqual(4, c["h"])
