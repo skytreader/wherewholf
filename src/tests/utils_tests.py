@@ -1,7 +1,12 @@
 import unittest
 
 from collections import Counter
+from typing import Iterable, List, Sequence
 from ..utils import ValueTieCounter
+
+
+def _take_ndex(it: Iterable, n: int) -> Sequence:
+    return [_[n] for _ in it]
 
 
 class ValueTieCounterTest(unittest.TestCase):
@@ -30,6 +35,25 @@ class ValueTieCounterTest(unittest.TestCase):
         c.update(Counter("watch"))
         self.assertEqual(4, c["h"])
 
+    def test_update_builds_index_properly(self):
+        c = ValueTieCounter("which")
+        c.update("witch")
+        c.update(Counter("watch"))
+        self.assertEqual(4, c["h"])
+        top2: List[Tuple, Any] = c.most_common(2)
+        top2_counts: Sequence = _take_ndex(top2, 1)
+        self.assertEqual(3, len(top2))
+        self.assertEqual(2, len(set(top2_counts)))
+        # h, w, and c
+        self.assertEqual((4, 3, 3), tuple(_take_ndex(top2, 1)))
+
+        c.update("who")
+        top2 = c.most_common(2)
+        top2_counts = _take_ndex(top2, 1)
+        self.assertEqual(2, len(top2))
+        self.assertEqual(2, len(set(top2_counts)))
+        self.assertEqual((5, 4), tuple(_take_ndex(top2, 1)))
+
     def test_most_common(self):
         test_string = "".join((
             "a" * 8,
@@ -43,7 +67,4 @@ class ValueTieCounterTest(unittest.TestCase):
         c = ValueTieCounter(test_string)
         top2 = c.most_common(2)
         self.assertEqual(3, len(top2))
-        self.assertEqual(
-            (8, 8, 7),
-            tuple(_[1] for _ in top2)
-        )
+        self.assertEqual((8, 8, 7), tuple(_take_ndex(top2, 1)))

@@ -98,7 +98,12 @@ class ValueTieCounter(Counter):
         possible_iterable = args[0] if args else None
         if possible_iterable is not None:
             if isinstance(possible_iterable, _collections_abc.Mapping):
-                # TODO if counter is empty, just copy in everything--if possible
+                # The reference implementation makes use of an optimization
+                # where if the Counter is empty to begin with, we basically just
+                # copy the whole thing. If done here, it would result in two
+                # linear loops: one for copying the Counter and another for
+                # rebuilding the index (via __index_counts). So using this
+                # "integrated" loop regardless of case is marginally faster.
                 for elem, count in possible_iterable.items():
                     old_count = self.internal_counter[elem]
                     self.internal_counter[elem] += count
@@ -122,6 +127,16 @@ class ValueTieCounter(Counter):
             self.update(kwargs)
 
     def most_common(self, n: Optional[int]=None) -> List[Tuple[Any, int]]:
+        """
+        Returns all items with the top `n` highest frequency, ties taken into
+        account. Whereas the original `most_common` method assures us that
+
+            len(c.most_common(n)) == n
+
+        the assuurance we have here, on the other hand, is
+
+            len(set([x[1] for x in c.most_common(n)]) == n
+        """
         most_common: List[Tuple[Any, int]] = []
         index_keys: Sequence[int] = self.value_tie_index.list_indices()
         top = len(index_keys) if n is None else n
