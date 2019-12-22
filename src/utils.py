@@ -70,6 +70,9 @@ class ValueTieCounter(Counter):
     def __getitem__(self, key: Any) -> int:
         return self.internal_counter[key]
 
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self.__update_single(key, value)
+
     def __bool__(self):
         return bool(self.internal_counter)
 
@@ -90,9 +93,17 @@ class ValueTieCounter(Counter):
     def __index_counts(self):
         for elem, count in self.internal_counter.items():
             self.value_tie_index.update_index(count, elem)
+    
+    def __update_single(self, key, value):
+        old_count = self.internal_counter[key]
+        self.internal_counter[key] += value
+        self.value_tie_index.remove_reference(old_count, key)
+        self.value_tie_index.update_index(
+            self.internal_counter[key], key
+        )
 
-    def update(self, *args, **kwargs):
-        if len(args) > 1:
+    def update(self, *args, **kwargs) -> None:
+        if len(args) > 1: 
             raise TypeError("expected at most 1 arguments, got %d" % len(args))
         
         possible_iterable = args[0] if args else None
@@ -146,4 +157,5 @@ class ValueTieCounter(Counter):
             entries: Tuple[Any, ...] = tuple(self.value_tie_index[index])
             most_common.extend([(e, index) for e in entries])
 
+        print("the most_commmon %s %s" % (n, most_common))
         return most_common

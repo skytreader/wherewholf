@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from src.pubsub import PubSubBroker
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
+from .utils import ValueTieCounter
 
+import os
 import random
 import logging
 
@@ -39,7 +41,7 @@ class Player(object):
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Player") is None:
             cfg = _cfg if _cfg is not None else {}
-            log_level = cfg.get("logLevel", "INFO")
+            log_level = cfg.get("logLevel", os.environ.get("WHEREWHOLF_LOGGER", "INFO"))
             self.logger.setLevel(logging.getLevelName(log_level))
 
             log_format = cfg.get("logFormat", "%(asctime)s - %(levelname)s - %(message)s")
@@ -113,7 +115,10 @@ class SanitizedPlayer(object):
 
     @staticmethod
     def recover_player_identity(splayer: "SanitizedPlayer") -> Player:
-        return SanitizedPlayer.__PLAYER_MEMORY[splayer]
+        spam = SanitizedPlayer.__PLAYER_MEMORY[splayer]
+        print("spam is %s" % spam)
+
+        return spam
 
     @staticmethod
     def is_the_same_player(player: Player, splayer: "SanitizedPlayer") -> bool:
@@ -216,7 +221,7 @@ class Hive(ABC):
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Hive") is None:
             cfg = _cfg if _cfg is not None else {}
-            log_level = cfg.get("logLevel", "INFO")
+            log_level = cfg.get("logLevel", os.environ.get("WHEREWHOLF_LOGGER", "INFO"))
             self.logger.setLevel(logging.getLevelName(log_level))
 
             log_format = cfg.get("logFormat", "%(asctime)s - %(levelname)s - %(message)s")
@@ -289,14 +294,27 @@ class WholeGameHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        vote_counter: Counter = Counter()
+    def __gather_votes(self, candidates: Sequence[SanitizedPlayer]) -> List[Tuple[Player, int]]:
+        vote_counter: Counter = ValueTieCounter()
         for player in self.alive_players:
-            voted_for: SanitizedPlayer = player.daytime_behavior(players)
+            voted_for: SanitizedPlayer = player.daytime_behavior(candidates)
             self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
             vote_counter[voted_for] += 1
-        # For simplicity's sake, just take the 1 most common; no tie breaks.
-        return vote_counter.most_common(1)[0][0]
+
+        return vote_counter.most_common(1)
+
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        consensus: List[Tuple[Player, int]] = self.__gather_votes(players)
+        self.logger.debug(consensus)
+        while len(consensus) > 1:
+            candidate_players = [vote_tuple[0] for vote_tuple in consensus]
+            self.logger.info("Tie between %s" % str(candidate_players))
+            sanitized_consensus = [
+                SanitizedPlayer.sanitize(p) for p in candidate_players
+            ]
+            consensus = self.__gather_votes(sanitized_consensus)
+            self.logger.debug(consensus)
+        return SanitizedPlayer.sanitize(consensus[0][0])
 
 
 class WerewolfHive(Hive):
