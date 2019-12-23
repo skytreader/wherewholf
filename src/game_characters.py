@@ -108,22 +108,19 @@ class SanitizedPlayer(object):
         if exists:
             return exists
         else:
-            sanitized = SanitizedPlayer(player)
+            sanitized: SanitizedPlayer = SanitizedPlayer(player)
             SanitizedPlayer.__SANITATION_CACHE[player] = sanitized
             SanitizedPlayer.__PLAYER_MEMORY[sanitized] = player
             return sanitized
 
     @staticmethod
     def recover_player_identity(splayer: "SanitizedPlayer") -> Player:
-        spam = SanitizedPlayer.__PLAYER_MEMORY[splayer]
-        print("spam is %s" % spam)
-
-        return spam
+        return SanitizedPlayer.__PLAYER_MEMORY[splayer]
 
     @staticmethod
     def is_the_same_player(player: Player, splayer: "SanitizedPlayer") -> bool:
-        _sanitize_player = SanitizedPlayer.__SANITATION_CACHE.get(player)
-        _actual_player = SanitizedPlayer.__PLAYER_MEMORY.get(splayer)
+        _sanitize_player: Optional[SanitizedPlayer] = SanitizedPlayer.__SANITATION_CACHE.get(player)
+        _actual_player: Optional[Player] = SanitizedPlayer.__PLAYER_MEMORY.get(splayer)
 
         return player is _actual_player and splayer is _sanitize_player
 
@@ -299,7 +296,7 @@ class WholeGameHive(Hive):
         for player in self.alive_players:
             voted_for: SanitizedPlayer = player.daytime_behavior(candidates)
             self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
-            vote_counter[voted_for] += 1
+            vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
 
         return vote_counter.most_common(1)
 
@@ -307,7 +304,7 @@ class WholeGameHive(Hive):
         consensus: List[Tuple[Player, int]] = self.__gather_votes(players)
         self.logger.debug(consensus)
         while len(consensus) > 1:
-            candidate_players = [vote_tuple[0] for vote_tuple in consensus]
+            candidate_players: List[Player] = [vote_tuple[0] for vote_tuple in consensus]
             self.logger.info("Tie between %s" % str(candidate_players))
             sanitized_consensus = [
                 SanitizedPlayer.sanitize(p) for p in candidate_players
