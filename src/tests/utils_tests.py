@@ -1,7 +1,7 @@
 import unittest
 
 from collections import Counter
-from typing import Iterable, List, Sequence
+from typing import Any, Iterable, List, Sequence, Tuple
 from ..utils import ValueTieCounter
 
 
@@ -11,15 +11,15 @@ def _take_ndex(it: Iterable, n: int) -> Sequence:
 
 class ValueTieCounterTest(unittest.TestCase):
 
-    def test_falsey(self):
+    def test_falsey(self) -> None:
         self.assertFalse(Counter())
         self.assertFalse(ValueTieCounter())
 
-    def test_truthy(self):
+    def test_truthy(self) -> None:
         self.assertTrue(Counter(a=1))
         self.assertTrue(ValueTieCounter(a=1))
 
-    def test_elements(self):
+    def test_elements(self) -> None:
         minuend = ValueTieCounter(a=4, b=2, c=0, d=-2)
         subtrahend = {"a": 1, "b": 2, "c": 3, "d": 4}
         minuend.subtract(subtrahend)
@@ -29,18 +29,18 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual(-3, minuend["c"])
         self.assertEqual(-6, minuend["d"])
     
-    def test_update(self):
+    def test_update(self) -> None:
         c = ValueTieCounter("which")
         c.update("witch")
         c.update(Counter("watch"))
         self.assertEqual(4, c["h"])
 
-    def test_update_builds_index_properly(self):
+    def test_update_builds_index_properly(self) -> None:
         c = ValueTieCounter("which")
         c.update("witch")
         c.update(Counter("watch"))
         self.assertEqual(4, c["h"])
-        top2: List[Tuple, Any] = c.most_common(2)
+        top2: List[Tuple[Any, int]] = c.most_common(2)
         top2_counts: Sequence = _take_ndex(top2, 1)
         self.assertEqual(3, len(top2))
         self.assertEqual(2, len(set(top2_counts)))
@@ -54,7 +54,7 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual(2, len(set(top2_counts)))
         self.assertEqual((5, 4), tuple(_take_ndex(top2, 1)))
 
-    def test_most_common(self):
+    def test_most_common(self) -> None:
         test_string = "".join((
             "a" * 8,
             "b" * 2,
@@ -68,8 +68,3 @@ class ValueTieCounterTest(unittest.TestCase):
         top2 = c.most_common(2)
         self.assertEqual(3, len(top2))
         self.assertEqual((8, 8, 7), tuple(_take_ndex(top2, 1)))
-    
-    def test_wherewholf(self):
-        c = ValueTieCounter(JE=1, Chad=1, Christine=2)
-        christine = c.most_common(1)
-        self.assertEqual(1, len(christine))

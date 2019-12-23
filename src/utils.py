@@ -23,7 +23,7 @@ class ValueIndex(object):
     Behavior of such items are undefined as of yet.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.value_index: Dict[int, Set[Any]] = {}
 
     def __getitem__(self, key: int) -> Set[Any]:
@@ -57,8 +57,8 @@ class ValueTieCounter(Counter):
     # NOTE The reference implementation does not declare a `self` parameter but
     # splits `*args` via `self, *args = args` before `self` is even ever used.
     # I would've done the same except that it feels wrong.
-    def __init__(self, *args, **kwds):
-        self.internal_counter = Counter()
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        self.internal_counter: Counter = Counter()
         self.internal_counter.update(*args, **kwds)
         self.value_tie_index: ValueIndex = ValueIndex()
 
@@ -73,7 +73,7 @@ class ValueTieCounter(Counter):
     def __setitem__(self, key: Any, value: Any) -> None:
         self.__update_single(key, value)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.internal_counter)
 
     def elements(self) -> Iterator[Any]:
@@ -90,11 +90,11 @@ class ValueTieCounter(Counter):
                 self.internal_counter[k], k
             )
 
-    def __index_counts(self):
+    def __index_counts(self) -> None:
         for elem, count in self.internal_counter.items():
             self.value_tie_index.update_index(count, elem)
     
-    def __update_single(self, key, value):
+    def __update_single(self, key: Any, value: Any) -> None:
         old_count = self.internal_counter[key]
         self.internal_counter[key] += value
         self.value_tie_index.remove_reference(old_count, key)
@@ -102,7 +102,7 @@ class ValueTieCounter(Counter):
             self.internal_counter[key], key
         )
 
-    def update(self, *args, **kwargs) -> None:
+    def update(self, *args: Any, **kwargs: Any) -> None:
         if len(args) > 1: 
             raise TypeError("expected at most 1 arguments, got %d" % len(args))
         

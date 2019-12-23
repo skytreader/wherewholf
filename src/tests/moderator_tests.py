@@ -8,7 +8,7 @@ from typing import Set
 
 class ModeratorTest(unittest.TestCase):
 
-    def test_endgame(self):
+    def test_endgame(self) -> None:
         players: Set[Player] = set()
         players.add(Player("Christine", Werewolf()))
         players.add(Player("Shara", Werewolf()))

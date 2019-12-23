@@ -4,7 +4,7 @@ from ..game_characters import (
     GameCharacter, Hive, Player, SanitizedPlayer, Villager, Werewolf,
     WholeGameHive
 )
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Set
 
 
 class InspectablePlayer(Player):
@@ -16,7 +16,7 @@ class InspectablePlayer(Player):
         aggression: float=0.3,
         suggestibility: float=0.4,
         persuasiveness: float=0.5
-    ):
+    ) -> None:
         super().__init__(name, role, aggression, suggestibility, persuasiveness)
         self.was_asked_for_daytime = False
 
@@ -38,7 +38,7 @@ class DummyHive(Hive):
 
 class PlayerTest(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.me = Player("Chad", Villager())
         self.players: Set[Player] = set()
         self.players.add(Player("Christine", Werewolf()))
@@ -49,7 +49,7 @@ class PlayerTest(unittest.TestCase):
 
         self.sanitized = [SanitizedPlayer.sanitize(p) for p in self.players]
 
-    def test_daytime_behavior(self):
+    def test_daytime_behavior(self) -> None:
         for _ in range(100):
             lynch: SanitizedPlayer = self.me.daytime_behavior(self.sanitized)
             self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
@@ -57,11 +57,11 @@ class PlayerTest(unittest.TestCase):
 
 class HiveTest(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.some_hive: Hive = DummyHive()
         self.christine = Player("Christine", Werewolf(), aggression=0.9)
         self.chad = Player("Chad", Villager(), aggression=0.7)
-        self.josh = Player("Josh", Werewolf, aggression=0.65)
+        self.josh = Player("Josh", Werewolf(), aggression=0.65)
 
         self.some_hive.add_player(self.christine)
         self.some_hive.add_player(self.chad)
@@ -69,14 +69,14 @@ class HiveTest(unittest.TestCase):
         self.some_hive.add_player(Player("JE", Villager()))
         self.some_hive.add_player(Player("Alvin", Villager(), aggression=0.1))
     
-    def test_get_most_aggressive(self):
+    def test_get_most_aggressive(self) -> None:
         expected_top_aggressors = (
             self.christine, self.chad, self.josh
         )
         actual_aggressors = self.some_hive._get_most_aggressive(3)
         self.assertEqual(expected_top_aggressors, actual_aggressors)
     
-    def test_dead_is_not_aggressive(self):
+    def test_dead_is_not_aggressive(self) -> None:
         # was not invited and will be dead
         charles: Player = Player("Charles", Villager(), aggression=1)
         self.some_hive.add_player(charles)
@@ -97,7 +97,7 @@ class HiveTest(unittest.TestCase):
 
 class WholeGameHiveTest(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.me = InspectablePlayer("Chad", Villager())
         self.players: Set[Player] = set()
         self.players.add(Player("Christine", Werewolf()))
@@ -109,7 +109,7 @@ class WholeGameHiveTest(unittest.TestCase):
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
 
-    def test_player_death(self):
+    def test_player_death(self) -> None:
         # Betrayed by my so-called "friends", let's say
         self.whole_game_hive.notify_player_death(self.me)
         sanitized = [SanitizedPlayer.sanitize(p) for p in self.players]

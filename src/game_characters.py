@@ -37,7 +37,7 @@ class Player(object):
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
-    def __configure_logger(self, _cfg=None):
+    def __configure_logger(self, _cfg: Dict=None) -> None:
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Player") is None:
             cfg = _cfg if _cfg is not None else {}
@@ -168,7 +168,7 @@ class GameCharacter(ABC):
         pass
 
     @abstractmethod
-    def __str__(self):
+    def __str__(self) -> str:
         return "Generic GameCharacter"
 
 
@@ -183,7 +183,7 @@ class Werewolf(GameCharacter):
     def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         return random.choice(players)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Werewolf"
 
 
@@ -198,7 +198,7 @@ class Villager(GameCharacter):
     def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
         return random.choice(players)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Villager"
 
 
@@ -217,7 +217,7 @@ class Hive(ABC):
         self.logger: logging.Logger = logging.getLogger("Hive")
         self.__configure_logger()
 
-    def __configure_logger(self, _cfg=None):
+    def __configure_logger(self, _cfg: Dict=None) -> None:
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Hive") is None:
             cfg = _cfg if _cfg is not None else {}
@@ -230,7 +230,7 @@ class Hive(ABC):
             self.logger.addHandler(handler)
             CONFIGURED_LOGGERS["Hive"] = True
 
-    def _publish_event(self, event_type: str, body: str):
+    def _publish_event(self, event_type: str, body: str) -> None:
         if self.pubsub_broker:
             self.pubsub_broker.broadcast_message(event_type, body)
 
@@ -319,7 +319,7 @@ class WholeGameHive(Hive):
 
 class WerewolfHive(Hive):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:

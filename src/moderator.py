@@ -34,7 +34,7 @@ class Moderator(object):
 
         self.hives: List[Hive] = [self.whole_game_hive]
 
-    def __configure_logger(self, _cfg=None):
+    def __configure_logger(self, _cfg: Dict=None) -> None:
         cfg = _cfg if _cfg is not None else {}
         log_level = cfg.get("logLevel", "INFO")
         self.logger.setLevel(logging.getLevelName(log_level))
@@ -49,7 +49,7 @@ class Moderator(object):
         for hive in self.hives:
             hive.notify_player_death(player)
 
-    def __game_on(self):
+    def __game_on(self) -> bool:
         return self.villager_count >= self.werewolf_count and self.werewolf_count > 0 and not self.__is_standoff()
 
     def __batch_sanitize(self, players: Iterable[Player]) -> Sequence[SanitizedPlayer]:
@@ -62,7 +62,7 @@ class Moderator(object):
         """
         return self.players - self.classes[char_class]
 
-    def __is_standoff(self):
+    def __is_standoff(self) -> bool:
         return self.villager_count == 1 and self.werewolf_count == 1
 
     def play(self) -> "EndGameState":
