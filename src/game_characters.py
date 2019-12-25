@@ -24,6 +24,9 @@ class Player(object):
     ):
         self.name: str = name
         self.role: GameCharacter = role
+        self.__player_attr_value_check(aggression)
+        self.__player_attr_value_check(suggestibility)
+        self.__player_attr_value_check(persuasiveness)
         # number between [0, 1]; determines how likely is this player to suggest
         # others for lynching.
         self.aggression: float = aggression
@@ -37,6 +40,10 @@ class Player(object):
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
+    def __player_attr_value_check(self, v: float):
+        if v < 0 or v > 1:
+            raise ValueError("Attribute should be in the range [0, 1]")
+
     def __configure_logger(self, _cfg: Dict=None) -> None:
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Player") is None:
@@ -49,16 +56,27 @@ class Player(object):
             handler.setFormatter(logging.Formatter(log_format))
             self.logger.addHandler(handler)
             CONFIGURED_LOGGERS["Player"] = True
+
+    def __is_persecuted(self, players: Sequence["SanitizedPlayer"]) -> bool:
+        return len(players) == 1 and SanitizedPlayer.is_the_same_player(self, players[0])
     
     def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
         return self.role.night_action(players)
 
-    def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> "SanitizedPlayer":
-        candidate: "SanitizedPlayer" = self.role.daytime_behavior(players)
-        while SanitizedPlayer.is_the_same_player(self, candidate):
-            candidate = self.role.daytime_behavior(players)
+    def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
+        chance = random.random()
+        # If you are persecuted, might as well abstain. In a final show of
+        # defiance, you might want to vote someone else just for the heck of it.
+        # But ultimately, it is meaningless since everyone else might just
+        # choose you. So we won't waste instruction cycles on your admirable yet
+        # all the same pointless act.
+        if chance <= self.aggression and not self.__is_persecuted(players):
+            candidate: Optional["SanitizedPlayer"] = self.role.daytime_behavior(players)
+            while candidate and SanitizedPlayer.is_the_same_player(self, candidate):
+                candidate = self.role.daytime_behavior(players)
 
-        return candidate
+            return candidate
+        return None
 
     def accept_suggestion(
         self,
@@ -161,7 +179,7 @@ class GameCharacter(ABC):
         pass
 
     @abstractmethod
-    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         pass
 
     @abstractmethod
@@ -177,7 +195,7 @@ class Werewolf(GameCharacter):
     def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return random.choice(players)
 
-    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return random.choice(players)
 
     def __str__(self) -> str:
@@ -192,8 +210,10 @@ class Villager(GameCharacter):
     def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return random.choice(players)
 
-    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
-        return random.choice(players)
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        if players:
+            return random.choice(players)
+        return None
 
     def __str__(self) -> str:
         return "Villager"
@@ -294,19 +314,33 @@ class WholeGameHive(Hive):
 
     def __gather_votes(self, candidates: Sequence[SanitizedPlayer]) -> List[Tuple[Player, int]]:
         vote_counter: Counter = ValueTieCounter()
-        for player in self.alive_players:
-            voted_for: SanitizedPlayer = player.daytime_behavior(candidates)
-            self.logger.info("%s voted to lynch %s." % (player.name, voted_for.name))
-            vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
+
+        # Force these players to vote!
+        while len(vote_counter.most_common(1)) == 0:
+            for player in self.alive_players:
+                voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(candidates)
+                if voted_for is not None:
+                    self.logger.info("%s voted to lynch %s." % (player.name, voted_for))
+                    vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
 
         return vote_counter.most_common(1)
 
     def __filter_candidates(self, players: Sequence[SanitizedPlayer]) -> Sequence[SanitizedPlayer]:
         aggressive_players: Tuple[Player, ...] = self._get_most_aggressive()
-        return list(set([ap.daytime_behavior(players) for ap in aggressive_players]))
+        candidates: Set[SanitizedPlayer] = set()
+        for ap in aggressive_players:
+            candidate: Optional[SanitizedPlayer] = ap.daytime_behavior(players)
+            if candidate is not None:
+                self.logger.info("%s nominated %s for lynching." % (ap, candidate))
+                candidates.add(candidate)
+        return list(candidates)
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         initial_candidates: Sequence[SanitizedPlayer] = self.__filter_candidates(players)
+
+        while not initial_candidates:
+            initial_candidates = self.__filter_candidates(players)
+
         self.logger.info("The candidates for lynching are %s" % initial_candidates)
         consensus: List[Tuple[Player, int]] = self.__gather_votes(initial_candidates)
 

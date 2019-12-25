@@ -20,7 +20,7 @@ class InspectablePlayer(Player):
         super().__init__(name, role, aggression, suggestibility, persuasiveness)
         self.was_asked_for_daytime = False
 
-    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> SanitizedPlayer:
+    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         self.was_asked_for_daytime = True
         return super().daytime_behavior(players)
 
@@ -51,8 +51,9 @@ class PlayerTest(unittest.TestCase):
 
     def test_daytime_behavior(self) -> None:
         for _ in range(100):
-            lynch: SanitizedPlayer = self.me.daytime_behavior(self.sanitized)
-            self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
+            lynch: Optional[SanitizedPlayer] = self.me.daytime_behavior(self.sanitized)
+            if lynch is not None:
+                self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
 
 
 class HiveTest(unittest.TestCase):
