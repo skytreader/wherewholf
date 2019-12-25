@@ -21,7 +21,7 @@ logger: logging.Logger = logging.getLogger("WHEREWHOLF_UTILS")
 logger.setLevel(logging.getLevelName(
     os.environ.get("WHEREWHOLF_MISC_LOG", "INFO")
 ))
-log_format: str = "%(asctime)s - %(levelname)s - %(message)s"
+log_format: str = "%(asctime)s - UTIL:%(levelname)s - %(message)s"
 handler: logging.Handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter(log_format))
 logger.addHandler(handler)
@@ -70,6 +70,7 @@ class ValueTieCounter(Counter):
     # splits `*args` via `self, *args = args` before `self` is even ever used.
     # I would've done the same except that it feels wrong.
     def __init__(self, *args: Any, **kwds: Any) -> None:
+        logger.debug("initialized new ValueTieCounter")
         self.internal_counter: Counter = Counter()
         self.internal_counter.update(*args, **kwds)
         self.value_tie_index: ValueIndex = ValueIndex()
@@ -83,6 +84,7 @@ class ValueTieCounter(Counter):
         return self.internal_counter[key]
 
     def __setitem__(self, key: Any, value: Any) -> None:
+        logger.debug("set %s to value %s" % (key, value))
         self.__update_single(key, value)
 
     def __bool__(self) -> bool:
@@ -108,7 +110,7 @@ class ValueTieCounter(Counter):
     
     def __update_single(self, key: Any, value: Any) -> None:
         old_count = self.internal_counter[key]
-        self.internal_counter[key] += value
+        self.internal_counter[key] = value
         self.value_tie_index.remove_reference(old_count, key)
         self.value_tie_index.update_index(
             self.internal_counter[key], key

@@ -68,3 +68,27 @@ class ValueTieCounterTest(unittest.TestCase):
         top2 = c.most_common(2)
         self.assertEqual(3, len(top2))
         self.assertEqual((8, 8, 7), tuple(_take_ndex(top2, 1)))
+
+    def test_most_common_game_usage(self) -> None:
+        from ..game_characters import Player
+        from ..game_characters import Villager, Werewolf
+
+        christine: Player = Player("Christine", Werewolf())
+        gab: Player = Player("Gab", Villager())
+        charles: Player = Player("Charles", Villager())
+        chad: Player = Player("Chad", Villager())
+        c: ValueTieCounter = ValueTieCounter()
+
+        # gab will have 2 and everyone else will have 1. However, don't set
+        # them straightaway to that. The bug we are reproducing seems to rely
+        # on the += operator to work
+        c[christine] += 1
+        c[gab] += 1
+        c[charles] += 1
+        c[gab] += 1
+        c[chad] += 1
+
+        self.assertEqual(2, c[gab])
+        self.assertEqual(1, c[christine])
+        self.assertEqual(1, c[charles])
+        self.assertEqual(1, c[chad])
