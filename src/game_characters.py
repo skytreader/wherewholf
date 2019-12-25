@@ -237,8 +237,9 @@ class Hive(ABC):
         with respect to aggression.
         """
         player_list: List[Player] = list(self.alive_players)
-        player_list.sort(key=lambda p: p.aggression, reverse=True)
-        return tuple(player_list[:n])
+        aggression_map: Dict[Player, float] = {p:p.aggression for p in player_list}
+        c = ValueTieCounter(aggression_map)
+        return tuple(kv[0] for kv in c.most_common(n))
     
     def add_player(self, player: Player) -> None:
         self.players.add(player)
@@ -300,9 +301,15 @@ class WholeGameHive(Hive):
 
         return vote_counter.most_common(1)
 
+    def __filter_candidates(self, players: Sequence[SanitizedPlayer]) -> Sequence[SanitizedPlayer]:
+        aggressive_players: Tuple[Player, ...] = self._get_most_aggressive()
+        return list(set([ap.daytime_behavior(players) for ap in aggressive_players]))
+
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        consensus: List[Tuple[Player, int]] = self.__gather_votes(players)
-        self.logger.debug(consensus)
+        initial_candidates: Sequence[SanitizedPlayer] = self.__filter_candidates(players)
+        self.logger.info("The candidates for lynching are %s" % initial_candidates)
+        consensus: List[Tuple[Player, int]] = self.__gather_votes(initial_candidates)
+
         while len(consensus) > 1:
             candidate_players: List[Player] = [vote_tuple[0] for vote_tuple in consensus]
             self.logger.info("Tie between %s" % str(candidate_players))
