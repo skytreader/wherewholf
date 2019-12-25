@@ -13,6 +13,18 @@ from typing import (
 )
 
 import _collections_abc
+import logging
+import os
+
+
+logger: logging.Logger = logging.getLogger("WHEREWHOLF_UTILS")
+logger.setLevel(logging.getLevelName(
+    os.environ.get("WHEREWHOLF_MISC_LOG", "INFO")
+))
+log_format: str = "%(asctime)s - %(levelname)s - %(message)s"
+handler: logging.Handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(log_format))
+logger.addHandler(handler)
 
 
 class ValueIndex(object):
@@ -157,5 +169,5 @@ class ValueTieCounter(Counter):
             entries: Tuple[Any, ...] = tuple(self.value_tie_index[index])
             most_common.extend([(e, index) for e in entries])
 
-        print("the most_commmon %s %s" % (n, most_common))
+        logger.debug("the most_commmon %s %s" % (n, most_common))
         return most_common
