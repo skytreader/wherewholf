@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import Counter
+from src.errors import AlwaysMeException
+from src.moderator import Nomination
 from src.pubsub import PubSubBroker
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from .utils import ValueTieCounter
 
 import os
@@ -13,6 +15,8 @@ CONFIGURED_LOGGERS: Dict[str, Any] = {}
 
 
 class Player(object):
+
+    UNIQUE_PICK_LIMIT = 100
 
     def __init__(
         self,
@@ -63,7 +67,32 @@ class Player(object):
     def night_action(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
         return self.role.night_action(players)
 
-    def daytime_behavior(self, players: Sequence["SanitizedPlayer"]) -> Optional["SanitizedPlayer"]:
+    def _pick_not_me(
+        self,
+        players: Sequence["SanitizedPlayer"],
+        chooser: Callable[[Sequence["SanitizedPlayer"]], Optional["SanitizedPlayer"]],
+        player_compare: Callable[[Player, "SanitizedPlayer"], bool]
+    ) -> "SanitizedPlayer":
+        """
+        Given a sequence of players, use the chooser function to pick a player
+        that is not _this_ player.
+        """
+        pick_count = 0
+        candidate: Optional[SanitizedPlayer] = chooser(players)
+
+        while candidate and player_compare(self, candidate):
+            if pick_count >= Player.UNIQUE_PICK_LIMIT:
+                raise AlwaysMeException("We can't seem to pick a player that is not me.")
+            pick_count += 1
+            candidate = chooser(players)
+
+        if candidate is None:
+            raise AlwaysMeException("chooser function failed.")
+
+        return candidate
+
+    def daytime_behavior(self, nominations: Sequence[Nomination]) -> Optional["SanitizedPlayer"]:
+        players: Sequence[SanitizedPlayer] = [nom.nomination for nom in nominations]
         chance = random.random()
         # If you are persecuted, might as well abstain. In a final show of
         # defiance, you might want to vote someone else just for the heck of it.
@@ -71,12 +100,24 @@ class Player(object):
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
         if chance <= self.aggression and not self.__is_persecuted(players):
-            candidate: Optional["SanitizedPlayer"] = self.role.daytime_behavior(players)
-            while candidate and SanitizedPlayer.is_the_same_player(self, candidate):
-                candidate = self.role.daytime_behavior(players)
-
-            return candidate
+            return self._pick_not_me(
+                players,
+                self.role.daytime_behavior,
+                SanitizedPlayer.is_the_same_player
+            )
         return None
+
+    def ask_lynch_nomination(self, players: Sequence["SanitizedPlayer"]) -> Optional[Nomination]:
+        """
+        Given the players still alive in the game, get a nomination from this
+        player on who to lynch.
+        """
+        pick_on: SanitizedPlayer = self._pick_not_me(
+            players,
+            self.role.daytime_behavior,
+            SanitizedPlayer.is_the_same_player
+        )
+        return Nomination(pick_on, SanitizedPlayer.sanitize(self))
 
     def accept_suggestion(
         self,
@@ -312,31 +353,32 @@ class WholeGameHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
-    def __gather_votes(self, candidates: Sequence[SanitizedPlayer]) -> List[Tuple[Player, int]]:
+    def __gather_votes(self, nominations: Sequence[Nomination]) -> List[Tuple[Player, int]]:
+        candidates = [nom.nomination for nom in nominations]
         vote_counter: Counter = ValueTieCounter()
 
         # Force these players to vote!
         while len(vote_counter.most_common(1)) == 0:
             for player in self.alive_players:
-                voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(candidates)
+                voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(nominations)
                 if voted_for is not None:
                     self.logger.info("%s voted to lynch %s." % (player.name, voted_for))
                     vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
 
         return vote_counter.most_common(1)
 
-    def __filter_candidates(self, players: Sequence[SanitizedPlayer]) -> Sequence[SanitizedPlayer]:
+    def __filter_candidates(self, players: Sequence[SanitizedPlayer]) -> Sequence[Nomination]:
         aggressive_players: Tuple[Player, ...] = self._get_most_aggressive()
-        candidates: Set[SanitizedPlayer] = set()
+        candidates: Set[Nomination] = set()
         for ap in aggressive_players:
-            candidate: Optional[SanitizedPlayer] = ap.daytime_behavior(players)
+            candidate: Optional[Nomination] = ap.ask_lynch_nomination(players)
             if candidate is not None:
                 self.logger.info("%s nominated %s for lynching." % (ap, candidate))
                 candidates.add(candidate)
         return list(candidates)
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        initial_candidates: Sequence[SanitizedPlayer] = self.__filter_candidates(players)
+        initial_candidates: Sequence[Nomination] = self.__filter_candidates(players)
 
         while not initial_candidates:
             initial_candidates = self.__filter_candidates(players)
@@ -391,8 +433,7 @@ class VillagerHive(Hive):
         return None
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        potato: Player = random.choice(list(self.players))
-        return potato.daytime_behavior(players)
+        return None
 
 
 CHARACTER_HIVE_MAPPING: Dict[Type["GameCharacter"], Type["Hive"]] = {
