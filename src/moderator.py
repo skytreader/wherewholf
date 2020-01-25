@@ -4,22 +4,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type
 
 import logging
 
-
-class Nomination(object):
-
-    def __init__(self, nomination: SanitizedPlayer, nominated_by: SanitizedPlayer):
-        self.nomination: SanitizedPlayer = nomination
-        self.nominated_by: SanitizedPlayer = nominated_by
-
-    def __eq__(self, other: Any) -> bool:
-        return all((
-            self.nomination == other.nomination,
-            self.nominated_by == other.nominated_by
-        ))
-
-    def __hash__(self) -> int:
-        return hash((self.nomination, self.nominated_by))
-
 class EndGameState(Enum):
     UNKNOWN_CONDITION = -1
     WEREWOLVES_WON = 1

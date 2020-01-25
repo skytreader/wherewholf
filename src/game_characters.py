@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
 from src.errors import AlwaysMeException
-from src.moderator import Nomination
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from .utils import ValueTieCounter
@@ -71,7 +70,7 @@ class Player(object):
         self,
         players: Sequence["SanitizedPlayer"],
         chooser: Callable[[Sequence["SanitizedPlayer"]], Optional["SanitizedPlayer"]],
-        player_compare: Callable[[Player, "SanitizedPlayer"], bool]
+        player_compare: Callable[["Player", "SanitizedPlayer"], bool]
     ) -> "SanitizedPlayer":
         """
         Given a sequence of players, use the chooser function to pick a player
@@ -91,7 +90,7 @@ class Player(object):
 
         return candidate
 
-    def daytime_behavior(self, nominations: Sequence[Nomination]) -> Optional["SanitizedPlayer"]:
+    def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
         players: Sequence[SanitizedPlayer] = [nom.nomination for nom in nominations]
         chance = random.random()
         # If you are persecuted, might as well abstain. In a final show of
@@ -107,7 +106,7 @@ class Player(object):
             )
         return None
 
-    def ask_lynch_nomination(self, players: Sequence["SanitizedPlayer"]) -> Optional[Nomination]:
+    def ask_lynch_nomination(self, players: Sequence["SanitizedPlayer"]) -> Optional["Nomination"]:
         """
         Given the players still alive in the game, get a nomination from this
         player on who to lynch.
@@ -194,6 +193,22 @@ class SanitizedPlayer(object):
 
     def __repr__(self) -> str:
         return str(self)
+
+
+class Nomination(object):
+
+    def __init__(self, nomination: SanitizedPlayer, nominated_by: SanitizedPlayer):
+        self.nomination: SanitizedPlayer = nomination
+        self.nominated_by: SanitizedPlayer = nominated_by
+
+    def __eq__(self, other: Any) -> bool:
+        return all((
+            self.nomination == other.nomination,
+            self.nominated_by == other.nominated_by
+        ))
+
+    def __hash__(self) -> int:
+        return hash((self.nomination, self.nominated_by))
 
 
 class GameCharacter(ABC):

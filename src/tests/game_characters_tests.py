@@ -1,7 +1,8 @@
+import random
 import unittest
 
 from ..game_characters import (
-    GameCharacter, Hive, Player, SanitizedPlayer, Villager, Werewolf,
+    GameCharacter, Hive, Nomination, Player, SanitizedPlayer, Villager, Werewolf,
     WholeGameHive
 )
 from typing import Optional, Sequence, Set
@@ -20,7 +21,7 @@ class InspectablePlayer(Player):
         super().__init__(name, role, aggression, suggestibility, persuasiveness)
         self.was_asked_for_daytime = False
 
-    def daytime_behavior(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+    def daytime_behavior(self, players: Sequence[Nomination]) -> Optional[SanitizedPlayer]:
         self.was_asked_for_daytime = True
         return super().daytime_behavior(players)
 
@@ -47,11 +48,16 @@ class PlayerTest(unittest.TestCase):
         self.players.add(Player("JE", Villager()))
         self.players.add(Player("Gab", Villager()))
 
-        self.sanitized = [SanitizedPlayer.sanitize(p) for p in self.players]
+        self.nominations = [
+            Nomination(
+                SanitizedPlayer.sanitize(p),
+                _pick_nominator(SanitizedPlayer.sanitize(p), list(self.players))
+            ) for p in self.players
+        ]
 
     def test_daytime_behavior(self) -> None:
         for _ in range(100):
-            lynch: Optional[SanitizedPlayer] = self.me.daytime_behavior(self.sanitized)
+            lynch: Optional[SanitizedPlayer] = self.me.daytime_behavior(self.nominations)
             if lynch is not None:
                 self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
 
@@ -117,3 +123,11 @@ class WholeGameHiveTest(unittest.TestCase):
         for _ in range(100):
             self.whole_game_hive.day_consensus(sanitized)
             self.assertFalse(self.me.was_asked_for_daytime)
+
+def _pick_nominator(nomination: SanitizedPlayer, players: Sequence[Player]):
+    nominator: Player = random.choice(players)
+
+    while SanitizedPlayer.is_the_same_player(nominator, nomination):
+        nominator = random.choice(players)
+
+    return nominator
