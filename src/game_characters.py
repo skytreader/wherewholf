@@ -367,7 +367,7 @@ class WholeGameHive(Hive):
 
         return vote_counter.most_common(1)
 
-    def __filter_candidates(self, players: Sequence[SanitizedPlayer]) -> Sequence[Nomination]:
+    def __gather_nominations(self, players: Sequence[SanitizedPlayer]) -> Sequence[Nomination]:
         aggressive_players: Tuple[Player, ...] = self._get_most_aggressive()
         candidates: Set[Nomination] = set()
         for ap in aggressive_players:
@@ -378,10 +378,11 @@ class WholeGameHive(Hive):
         return list(candidates)
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        initial_candidates: Sequence[Nomination] = self.__filter_candidates(players)
-
-        while not initial_candidates:
-            initial_candidates = self.__filter_candidates(players)
+        initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
+        # Build a nomination map for easy reference
+        nomination_map: Dict[SanitizedPlayer, SanitizedPlayer] = {
+            nom.nomination: nom.nominated_by for nom in initial_candidates
+        }
 
         self.logger.info("The candidates for lynching are %s" % initial_candidates)
         consensus: List[Tuple[Player, int]] = self.__gather_votes(initial_candidates)
@@ -389,10 +390,13 @@ class WholeGameHive(Hive):
         while len(consensus) > 1:
             candidate_players: List[Player] = [vote_tuple[0] for vote_tuple in consensus]
             self.logger.info("Tie between %s" % str(candidate_players))
-            sanitized_consensus = [
-                SanitizedPlayer.sanitize(p) for p in candidate_players
+            tied_nominations = [
+                Nomination(
+                    SanitizedPlayer.sanitize(p),
+                    nomination_map[SanitizedPlayer.sanitize(p)]
+                ) for p in candidate_players
             ]
-            consensus = self.__gather_votes(sanitized_consensus)
+            consensus = self.__gather_votes(tied_nominations)
             self.logger.debug(consensus)
         return SanitizedPlayer.sanitize(consensus[0][0])
 
