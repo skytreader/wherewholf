@@ -69,12 +69,18 @@ class Moderator(object):
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
         ww_hive: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
+        print(self.classes)
         ww_hive.add_players(self.classes[Werewolf])
 
         self.hives.append(ww_hive)
         while self.__game_on():
             self.logger.info("The village goes to sleep...")
             self.logger.info("Werewolves wake up!")
+            # Inform the werewolves of each others' identities.
+            # In the future, in a more abstracted version of the game, use the
+            # `can_members_know_each_other` property of Hives.
+            for werewolf in ww_hive.players:
+                werewolf.hive_members = ww_hive.players
             dead_by_wolf: Optional[SanitizedPlayer] = ww_hive.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:

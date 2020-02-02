@@ -23,7 +23,8 @@ class Player(object):
         role: "GameCharacter",
         aggression: float=0.3,
         suggestibility: float=0.4,
-        persuasiveness: float=0.5
+        persuasiveness: float=0.5,
+        hive_affinity: float=0.6
     ):
         self.name: str = name
         self.role: GameCharacter = role
@@ -36,10 +37,17 @@ class Player(object):
         # number between [0, 1]; determines how likely the suggestion of others
         # influence this player's vote. This applies for any instance where a
         # player needs to participate in consensus.
-        self.suggestibility = suggestibility
+        self.suggestibility: float = suggestibility
         # determines how likely this player is to persuade others in hive
         # actions. Can also be a measure of how good this player is at lying.
-        self.persuasiveness = persuasiveness
+        self.persuasiveness: float = persuasiveness
+        # Players who belong to particular Hives (e.g., werewolves) have a
+        # mental model of who their teammates are. This knowledge should be
+        # regulated by the moderator.
+        # TODO When players change allegiances, other players in their (old)
+        # Hive should not know of this automatically.
+        self.hive_members: Set[Player] = set()
+        self.hive_affinity: float = hive_affinity
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
@@ -90,7 +98,36 @@ class Player(object):
 
         return candidate
 
+    def __pick_from_hive_suggestion(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
+        # FIXME Maybe: *Can* be slow
+        # Filter out the nominations first...
+        def is_hivemate(sp: SanitizedPlayer) -> bool:
+            """
+            This method is placed here so as to prevent other methods of this
+            class from deducing possible game state changes it should not be
+            privy to; you can potentially use this to observe allegiance changes!
+            """
+            for member in self.hive_members:
+                if SanitizedPlayer.is_the_same_player(member, sp):
+                    return True
+
+            return False
+
+        teammate_noms: Set["Nomination"] = set([
+            nom for nom in nominations if is_hivemate(nom.nominated_by)
+        ])
+
+        if not teammate_noms:
+            return None
+        else:
+            return random.choice(list(teammate_noms)).nomination
+
     def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
+        will_follow_hive = random.random()
+
+        if will_follow_hive <= self.hive_affinity and self.hive_members:
+            return self.__pick_from_hive_suggestion(nominations)
+
         players: Sequence[SanitizedPlayer] = [nom.nomination for nom in nominations]
         chance = random.random()
         # If you are persecuted, might as well abstain. In a final show of
@@ -173,6 +210,14 @@ class SanitizedPlayer(object):
 
     @staticmethod
     def recover_player_identity(splayer: "SanitizedPlayer") -> Player:
+        """
+        WARNING: For adults only!
+
+        Since this gives you access to a `Player` object--and so, subsequently,
+        the role of the given `SanitizedPlayer` using this method is greatly
+        discouraged. Whenever possible, use the method `is_the_same_player`
+        instead.
+        """
         return SanitizedPlayer.__PLAYER_MEMORY[splayer]
 
     @staticmethod
@@ -289,6 +334,10 @@ class Hive(ABC):
         self.pubsub_broker: Optional[PubSubBroker] = pubsub_broker
         self.logger: logging.Logger = logging.getLogger("Hive")
         self.__configure_logger()
+
+    @property
+    def can_members_know_each_other(self) -> bool:
+        return False
 
     def __configure_logger(self, _cfg: Dict=None) -> None:
         global CONFIGURED_LOGGERS
@@ -420,6 +469,10 @@ class WerewolfHive(Hive):
 
     def __init__(self) -> None:
         super().__init__()
+
+    @property
+    def can_members_know_each_other(self) -> bool:
+        return True
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         consensus_count: int = 0
