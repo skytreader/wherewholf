@@ -69,7 +69,6 @@ class Moderator(object):
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
         ww_hive: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
-        print(self.classes)
         ww_hive.add_players(self.classes[Werewolf])
 
         self.hives.append(ww_hive)

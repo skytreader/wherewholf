@@ -1,15 +1,8 @@
-"""
-Custom Counter class that takes ties into account in the `most_common` method.
-Other than that, this should be a drop-in replacement for collections.Counter.
-
-Note that the reference implementation for this is the Counter class in CPython
-3.7; 3.8 introduces syntactic changes that are not backwards-compatible to 3.7.
-"""
 from collections import Counter
 from collections.abc import Iterable as IterableBaseClass
 
 from typing import (
-    Any, Dict, Iterable, Iterator, List, Mapping, Optional, Set, Sequence, Tuple, Union
+    Any, Counter as t_Counter, Dict, Iterable, Iterator, List, Mapping, Optional, Set, Sequence, Tuple, Union
 )
 
 import _collections_abc
@@ -59,6 +52,14 @@ class ValueIndex(object):
 
 class ValueTieCounter(Counter):
     """
+    Custom Counter class that takes ties into account in the `most_common`
+    method. Other than that, this should be a drop-in replacement for
+    collections.Counter.
+    
+    Note that the reference implementation for this is the Counter class in
+    CPython 3.7; 3.8 introduces syntactic changes that are not
+    backwards-compatible to 3.7.
+
     ACHTUNG! The idea is to keep this class as similar in behavior to
     collections.Counter as much as possible, to the extent that it is a
     drop-in replacement except for when behavior really differs as documented.
@@ -173,3 +174,33 @@ class ValueTieCounter(Counter):
 
         logger.debug("the most_commmon %s %s" % (n, most_common))
         return most_common
+
+class MarkovChain(object):
+    """
+    This class allows you to keep a record of the empirical probability that a
+    given cause results to some effect.
+    """
+
+    def __init__(self):
+        self.causes: Dict[str, t_Counter[str]] = {}
+        # Invariant: 
+        #   __
+        #   \      causes[s][t]
+        #    > ------------------- = 1
+        #   /_ cause_occurences[s]
+        #    t
+        self.cause_occurences: t_Counter[str] = Counter()
+
+    def add_event(self, cause: str, effect: str) -> None:
+        cause_matrix: Optional[t_Counter[str]] = self.causes.get(cause)
+        if cause_matrix is None:
+            self.causes[cause] = Counter()
+
+        self.causes[cause].update([effect])
+        self.cause_occurences.update([cause])
+
+    def running_probability(self, cause: str, effect: str) -> float:
+        if self.causes.get(cause) is None:
+            raise IndexError("No event with the cause '%s' yet." % cause)
+
+        return self.causes[cause][effect] / self.cause_occurences[cause]

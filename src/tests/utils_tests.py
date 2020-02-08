@@ -2,7 +2,7 @@ import unittest
 
 from collections import Counter
 from typing import Any, Iterable, List, Sequence, Tuple
-from ..utils import ValueTieCounter
+from ..utils import MarkovChain, ValueTieCounter
 
 
 def _take_ndex(it: Iterable, n: int) -> Sequence:
@@ -92,3 +92,17 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual(1, c[christine])
         self.assertEqual(1, c[charles])
         self.assertEqual(1, c[chad])
+
+class MarkovChainTests(unittest.TestCase):
+
+    def test_add_event_and_probs(self) -> None:
+        mc: MarkovChain = MarkovChain()
+        mc.add_event("shara", "villager dead")
+        mc.add_event("shara", "werewolf dead")
+
+        self.assertAlmostEqual(0.5, mc.running_probability("shara", "villager dead"))
+        self.assertAlmostEqual(0.5, mc.running_probability("shara", "werewolf dead"))
+
+        mc.add_event("shara", "villager dead")
+        self.assertAlmostEqual(0.66, mc.running_probability("shara", "villager dead"), delta=0.01)
+        self.assertAlmostEqual(0.33, mc.running_probability("shara", "werewolf dead"), delta=0.01)
