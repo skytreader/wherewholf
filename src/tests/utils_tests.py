@@ -2,7 +2,8 @@ import unittest
 
 from collections import Counter
 from typing import Any, Iterable, List, Sequence, Tuple
-from ..utils import MarkovChain, ValueTieCounter
+from ..utils import MarkovChain, NominationTracker, ValueTieCounter
+from ..game_characters import Player, SanitizedPlayer, Villager, Werewolf
 
 
 def _take_ndex(it: Iterable, n: int) -> Sequence:
@@ -70,9 +71,6 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual((8, 8, 7), tuple(_take_ndex(top2, 1)))
 
     def test_most_common_game_usage(self) -> None:
-        from ..game_characters import Player
-        from ..game_characters import Villager, Werewolf
-
         christine: Player = Player("Christine", Werewolf())
         gab: Player = Player("Gab", Villager())
         charles: Player = Player("Charles", Villager())
@@ -106,3 +104,13 @@ class MarkovChainTests(unittest.TestCase):
         mc.add_event("shara", "villager dead")
         self.assertAlmostEqual(0.66, mc.running_probability("shara", "villager dead"), delta=0.01)
         self.assertAlmostEqual(0.33, mc.running_probability("shara", "werewolf dead"), delta=0.01)
+
+class NominationTrackerTests(unittest.TestCase):
+
+    def test_nomination_tracker(self) -> None:
+        tracker = NominationTracker(3)
+        christine: SanitizedPlayer = SanitizedPlayer(Player("Christine", Werewolf()))
+        self.assertEqual([], tracker.get_recent_turns_nominated(christine))
+        tracker.notemination(christine, 1)
+        tracker.notemination(christine, 2)
+        tracker.notemination(christine, 3)

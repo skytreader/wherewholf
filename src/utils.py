@@ -2,12 +2,16 @@ from collections import Counter
 from collections.abc import Iterable as IterableBaseClass
 
 from typing import (
-    Any, Counter as t_Counter, Dict, Iterable, Iterator, List, Mapping, Optional, Set, Sequence, Tuple, Union
+    Any, Counter as t_Counter, Dict, Iterable, Iterator, List, Mapping,
+    Optional, Set, Sequence, Tuple, TYPE_CHECKING, Union
 )
 
 import _collections_abc
 import logging
 import os
+
+if TYPE_CHECKING:
+    from .game_characters import SanitizedPlayer
 
 
 logger: logging.Logger = logging.getLogger("WHEREWHOLF_UTILS")
@@ -204,3 +208,25 @@ class MarkovChain(object):
             raise IndexError("No event with the cause '%s' yet." % cause)
 
         return self.causes[cause][effect] / self.cause_occurences[cause]
+
+class NominationTracker(object):
+
+    def __init__(self, recency: int):
+        self.recency: int = recency
+        self.tracking: Dict["SanitizedPlayer", List[int]] = {}
+
+    def notemination(self, nominated_by: "SanitizedPlayer", turn: int) -> None:
+        track = self.tracking.get(nominated_by)
+        
+        if track is None:
+            self.tracking[nominated_by] = [turn]
+        else:
+            self.tracking[nominated_by].append(turn)
+
+            if len(self.tracking[nominated_by]) == self.recency:
+                self.tracking[nominated_by].pop(0)
+
+            assert len(self.tracking[nominated_by]) < self.recency
+
+    def get_recent_turns_nominated(self, player: "SanitizedPlayer") -> List[int]:
+        return self.tracking.get(player, [])
