@@ -3,7 +3,7 @@ from collections import Counter
 from src.errors import AlwaysMeException
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
-from .utils import ValueTieCounter
+from .utils import NominationTracker, ValueTieCounter
 
 import os
 import random
@@ -24,7 +24,8 @@ class Player(object):
         aggression: float=0.3,
         suggestibility: float=0.4,
         persuasiveness: float=0.5,
-        hive_affinity: float=0.6
+        hive_affinity: float=0.6,
+        nomination_recency: int=3
     ):
         self.name: str = name
         self.role: GameCharacter = role
@@ -41,6 +42,10 @@ class Player(object):
         # determines how likely this player is to persuade others in hive
         # actions. Can also be a measure of how good this player is at lying.
         self.persuasiveness: float = persuasiveness
+        self.nomination_tracker: NominationTracker = NominationTracker(
+            nomination_recency
+        )
+        self.__turn_counter: int = 0
         # Players who belong to particular Hives (e.g., werewolves) have a
         # mental model of who their teammates are. This knowledge should be
         # regulated by the moderator.
@@ -79,7 +84,7 @@ class Player(object):
         players: Sequence["SanitizedPlayer"],
         chooser: Callable[[Sequence["SanitizedPlayer"]], Optional["SanitizedPlayer"]],
         player_compare: Callable[["Player", "SanitizedPlayer"], bool]
-    ) -> "SanitizedPlayer":
+    ) -> Optional["SanitizedPlayer"]:
         """
         Given a sequence of players, use the chooser function to pick a player
         that is not _this_ player.
@@ -89,12 +94,9 @@ class Player(object):
 
         while candidate and player_compare(self, candidate):
             if pick_count >= Player.UNIQUE_PICK_LIMIT:
-                raise AlwaysMeException("We can't seem to pick a player that is not me.")
+                return None
             pick_count += 1
             candidate = chooser(players)
-
-        if candidate is None:
-            raise AlwaysMeException("chooser function failed.")
 
         return candidate
 
@@ -155,11 +157,14 @@ class Player(object):
         )
         return Nomination(pick_on, SanitizedPlayer.sanitize(self))
 
-    def accept_suggestion(
+    def accept_night_suggestion(
         self,
         voted_for: "SanitizedPlayer",
         suggested_by: "SanitizedPlayer"
     ) -> bool:
+        """
+        Use this for consensus calls during the night.
+        """
         vote_accepted = random.random()
         return vote_accepted <= (
             self.suggestibility * suggested_by.persuasiveness
@@ -485,7 +490,7 @@ class WerewolfHive(Hive):
             for hive_member in self.players:
                 if hive_member is not potato and suggestion is not None:
                     consensus_count += (
-                        1 if hive_member.accept_suggestion(suggestion, SanitizedPlayer.sanitize(potato)) else 0
+                        1 if hive_member.accept_night_suggestion(suggestion, SanitizedPlayer.sanitize(potato)) else 0
                     )
 
             if consensus_count < self.consensus:

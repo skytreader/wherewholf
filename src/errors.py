@@ -1,2 +1,0 @@
-class AlwaysMeException(Exception):
-    pass
