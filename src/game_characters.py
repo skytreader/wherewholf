@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from src.errors import AlwaysMeException
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from .utils import NominationTracker, ValueTieCounter
@@ -45,7 +44,7 @@ class Player(object):
         self.nomination_tracker: NominationTracker = NominationTracker(
             nomination_recency
         )
-        self.__turn_counter: int = 0
+        self.__turn_count: int = 0
         # Players who belong to particular Hives (e.g., werewolves) have a
         # mental model of who their teammates are. This knowledge should be
         # regulated by the moderator.
@@ -89,16 +88,19 @@ class Player(object):
         Given a sequence of players, use the chooser function to pick a player
         that is not _this_ player.
         """
-        pick_count = 0
-        candidate: Optional[SanitizedPlayer] = chooser(players)
+        if len(players):
+            pick_count = 0
+            candidate: Optional[SanitizedPlayer] = chooser(players)
 
-        while candidate and player_compare(self, candidate):
-            if pick_count >= Player.UNIQUE_PICK_LIMIT:
-                return None
-            pick_count += 1
-            candidate = chooser(players)
+            while candidate and player_compare(self, candidate):
+                if pick_count >= Player.UNIQUE_PICK_LIMIT:
+                    return None
+                pick_count += 1
+                candidate = chooser(players)
 
-        return candidate
+            return candidate
+
+        return None
 
     def __pick_from_hive_suggestion(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
         # FIXME Maybe: *Can* be slow
@@ -123,23 +125,54 @@ class Player(object):
             return None
         else:
             return random.choice(list(teammate_noms)).nomination
+    
+    def __make_attr_decision(
+        self,
+        attr: float,
+        decider: Callable[[], float]=random.random
+    ) -> bool:
+        """
+        Where `attr` is a value in the range [0, 1] and `decider` returns a
+        value in the same range, this function returns True when `decider`
+        returns a value in the range [0, attr]. The distribution can be
+        controlled by passing a different `decider` function.
+        """
+        spam: float = decider()
+        return spam <= attr
 
     def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
         will_follow_hive = random.random()
+        self.__turn_count += 1
 
         if will_follow_hive <= self.hive_affinity and self.hive_members:
             return self.__pick_from_hive_suggestion(nominations)
+        
+        # Filter out nominations first based on how aggressive the nominators
+        # are, coupled with how suggestible this player is.
+        last_turn_of_note = self.__turn_count - self.nomination_tracker.recency
+        aggression_filtered: List[SanitizedPlayer] = []
+        for nom in nominations:
+            self.nomination_tracker.notemination(
+                nom.nominated_by, self.__turn_count
+            )
+            recent_turns = self.nomination_tracker.get_recent_turns_nominated(
+                nom.nominated_by
+            )
+            if not (
+                min(recent_turns) >= last_turn_of_note and
+                self.__make_attr_decision(self.suggestibility)
+            ):
+                aggression_filtered.append(nom.nomination)
 
-        players: Sequence[SanitizedPlayer] = [nom.nomination for nom in nominations]
         chance = random.random()
         # If you are persecuted, might as well abstain. In a final show of
         # defiance, you might want to vote someone else just for the heck of it.
         # But ultimately, it is meaningless since everyone else might just
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
-        if chance <= self.aggression and not self.__is_persecuted(players):
+        if chance <= self.aggression and not self.__is_persecuted(aggression_filtered):
             return self._pick_not_me(
-                players,
+                aggression_filtered,
                 self.role.daytime_behavior,
                 SanitizedPlayer.is_the_same_player
             )
@@ -150,12 +183,15 @@ class Player(object):
         Given the players still alive in the game, get a nomination from this
         player on who to lynch.
         """
-        pick_on: SanitizedPlayer = self._pick_not_me(
+        pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
             players,
             self.role.daytime_behavior,
             SanitizedPlayer.is_the_same_player
         )
-        return Nomination(pick_on, SanitizedPlayer.sanitize(self))
+        if pick_on:
+            return Nomination(pick_on, SanitizedPlayer.sanitize(self))
+        else:
+            return None
 
     def accept_night_suggestion(
         self,

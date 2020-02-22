@@ -183,6 +183,10 @@ class MarkovChain(object):
     """
     This class allows you to keep a record of the empirical probability that a
     given cause results to some effect.
+
+    Module usage: Players want to keep track of how sound the nominations/
+    judgement of their fellow players are, which could influence how much they
+    trust that player in the future. We keep track of that via a Markov Chain.
     """
 
     def __init__(self):
@@ -229,4 +233,8 @@ class NominationTracker(object):
             assert len(self.tracking[nominated_by]) < self.recency
 
     def get_recent_turns_nominated(self, player: "SanitizedPlayer") -> List[int]:
+        """
+        Get the last n turns when the given player made a nomination, where n
+        is the recency parameter given to this NominationTracker.
+        """
         return self.tracking.get(player, [])
