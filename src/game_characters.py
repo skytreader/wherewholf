@@ -158,9 +158,13 @@ class Player(object):
             recent_turns = self.nomination_tracker.get_recent_turns_nominated(
                 nom.nominated_by
             )
+            # The only time nomination from an aggressive player won't be
+            # considered is when nomination is not recent (i.e., nominating
+            # player is perceived as being too aggressive) and the considering
+            # player is not suggestible---suggestibility is a huge factor here!
             if not (
                 min(recent_turns) >= last_turn_of_note and
-                self.__make_attr_decision(self.suggestibility)
+                not self.__make_attr_decision(self.suggestibility)
             ):
                 aggression_filtered.append(nom.nomination)
 

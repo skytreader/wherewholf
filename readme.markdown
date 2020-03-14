@@ -19,7 +19,7 @@ documentation will make note of this decision.
 
 [^1] In as much as we can do so in Python. Ultimately, classes might be able to
 read memory segments it should not have access to, should this bug exist in the
-Python interpreter.
+Python interpreter. See also: Python's "We are all adults here" philosophy.
 
 ## Running
 
