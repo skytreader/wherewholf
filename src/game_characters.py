@@ -168,13 +168,15 @@ class Player(object):
             ):
                 aggression_filtered.append(nom.nomination)
 
-        chance = random.random()
         # If you are persecuted, might as well abstain. In a final show of
         # defiance, you might want to vote someone else just for the heck of it.
         # But ultimately, it is meaningless since everyone else might just
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
-        if chance <= self.aggression and not self.__is_persecuted(aggression_filtered):
+        if (
+            self.__make_attr_decision(self.aggression) and
+            not self.__is_persecuted(aggression_filtered)
+        ):
             return self._pick_not_me(
                 aggression_filtered,
                 self.role.daytime_behavior,
