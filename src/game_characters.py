@@ -207,8 +207,7 @@ class Player(object):
         """
         Use this for consensus calls during the night.
         """
-        vote_accepted = random.random()
-        return vote_accepted <= (
+        return self.__make_attr_decision(
             self.suggestibility * suggested_by.persuasiveness
         )
 
