@@ -3,9 +3,9 @@ import unittest
 
 from ..game_characters import (
     GameCharacter, Hive, Nomination, Player, SanitizedPlayer, Villager, Werewolf,
-    WholeGameHive
+    WerewolfHive, WholeGameHive
 )
-from typing import Optional, Sequence, Set
+from typing import Dict, Optional, Sequence, Set
 
 
 class InspectablePlayer(Player):
@@ -47,6 +47,10 @@ class PlayerTest(unittest.TestCase):
         self.players.add(self.me)
         self.players.add(Player("JE", Villager()))
         self.players.add(Player("Gab", Villager()))
+        self.player_map: Dict[str, Player] = {p.name:p for p in self.players}
+        self.werewolf_hive: WerewolfHive = WerewolfHive()
+        self.werewolf_hive.add_player(self.player_map["Christine"])
+        self.werewolf_hive.add_player(self.player_map["Shara"])
 
         self.nominations = [
             Nomination(
@@ -61,6 +65,28 @@ class PlayerTest(unittest.TestCase):
             if lynch is not None:
                 self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
 
+    def test_hive_affinity(self) -> None:
+        mark: Player = Player("Mark", Werewolf(), hive_affinity=1.0)
+        self.werewolf_hive.add_player(mark)
+        mark.hive_members = self.werewolf_hive.players
+        nominations = [
+            Nomination(
+                SanitizedPlayer.sanitize(self.player_map["Chad"]),
+                SanitizedPlayer.sanitize(self.player_map["Shara"])
+            ),
+            Nomination(
+                SanitizedPlayer.sanitize(self.player_map["Gab"]),
+                SanitizedPlayer.sanitize(self.player_map["Chad"])
+            ),
+            Nomination(
+                SanitizedPlayer.sanitize(self.player_map["JE"]),
+                SanitizedPlayer.sanitize(self.player_map["Gab"])
+            )
+        ]
+        self.assertEqual(
+            SanitizedPlayer.sanitize(self.player_map["Chad"]),
+            mark.daytime_behavior(nominations)
+        )
 
 class HiveTest(unittest.TestCase):
 

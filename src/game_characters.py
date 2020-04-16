@@ -137,14 +137,12 @@ class Player(object):
         returns a value in the range [0, attr]. The distribution can be
         controlled by passing a different `decider` function.
         """
-        spam: float = decider()
-        return spam <= attr
+        return decider() <= attr
 
     def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
-        will_follow_hive = random.random()
         self.__turn_count += 1
 
-        if will_follow_hive <= self.hive_affinity and self.hive_members:
+        if self.__make_attr_decision(self.hive_affinity) and self.hive_members:
             return self.__pick_from_hive_suggestion(nominations)
         
         # Filter out nominations first based on how aggressive the nominators
