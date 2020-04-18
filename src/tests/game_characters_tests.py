@@ -88,6 +88,18 @@ class PlayerTest(unittest.TestCase):
             mark.daytime_behavior(nominations)
         )
 
+    def test_aggression(self) -> None:
+        """
+        Recall: aggression is the factor which determines how likely a player
+        will suggest others for lynching.
+        """
+        aunt_zee: Player = Player("Zelda", Villager(), aggression=1.0)
+        aunt_hilda: Player = Player("Hilda", Villager(), aggression=0.0)
+
+        sanitizeds = [SanitizedPlayer.sanitize(p) for p in self.players]
+        self.assertIsNone(aunt_hilda.ask_lynch_nomination(sanitizeds))
+        self.assertIsNotNone(aunt_zee.ask_lynch_nomination(sanitizeds))
+
 class HiveTest(unittest.TestCase):
 
     def setUp(self) -> None:
