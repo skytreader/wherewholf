@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
+from src.errors import GameDeadLockError
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from .utils import NominationTracker, ValueTieCounter
@@ -93,6 +94,7 @@ class Player(object):
             candidate: Optional[SanitizedPlayer] = chooser(players)
 
             while candidate and player_compare(self, candidate):
+                print("%s, %s, %s" % (candidate, player_compare(self, candidate), pick_count))
                 if pick_count >= Player.UNIQUE_PICK_LIMIT:
                     return None
                 pick_count += 1
@@ -171,10 +173,7 @@ class Player(object):
         # But ultimately, it is meaningless since everyone else might just
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
-        if (
-            self.__make_attr_decision(self.aggression) and
-            not self.__is_persecuted(aggression_filtered)
-        ):
+        if not self.__is_persecuted(aggression_filtered):
             return self._pick_not_me(
                 aggression_filtered,
                 self.role.daytime_behavior,
@@ -187,15 +186,16 @@ class Player(object):
         Given the players still alive in the game, get a nomination from this
         player on who to lynch.
         """
-        pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
-            players,
-            self.role.daytime_behavior,
-            SanitizedPlayer.is_the_same_player
-        )
-        if pick_on:
-            return Nomination(pick_on, SanitizedPlayer.sanitize(self))
-        else:
-            return None
+        if self.__make_attr_decision(self.aggression):
+            pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
+                players,
+                self.role.daytime_behavior,
+                SanitizedPlayer.is_the_same_player
+            )
+            if pick_on:
+                return Nomination(pick_on, SanitizedPlayer.sanitize(self))
+
+        return None
 
     def accept_night_suggestion(
         self,
@@ -458,20 +458,27 @@ class WholeGameHive(Hive):
     implemented.
     """
 
+    MAX_VOTE_TURNS = 100
+
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
     def __gather_votes(self, nominations: Sequence[Nomination]) -> List[Tuple[Player, int]]:
         candidates = [nom.nomination for nom in nominations]
         vote_counter: Counter = ValueTieCounter()
+        deadlock_counter = 0
 
         # Force these players to vote!
         while len(vote_counter.most_common(1)) == 0:
+            if deadlock_counter >= WholeGameHive.MAX_VOTE_TURNS:
+                raise GameDeadLockError("Can't gather enough votes.")
+
             for player in self.alive_players:
                 voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(nominations)
                 if voted_for is not None:
                     self.logger.info("%s voted to lynch %s." % (player.name, voted_for))
                     vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
+            deadlock_counter += 1
 
         return vote_counter.most_common(1)
 

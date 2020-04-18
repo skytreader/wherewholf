@@ -59,6 +59,15 @@ class PlayerTest(unittest.TestCase):
             ) for p in self.players
         ]
 
+    def test_pick_not_me(self) -> None:
+        no_choice: Sequence[SanitizedPlayer] = [SanitizedPlayer.sanitize(self.me)]
+        chosen = self.me._pick_not_me(
+            no_choice,
+            random.choice,
+            SanitizedPlayer.is_the_same_player
+        )
+        self.assertIsNone(chosen)
+
     def test_daytime_behavior(self) -> None:
         for _ in range(100):
             lynch: Optional[SanitizedPlayer] = self.me.daytime_behavior(self.nominations)
