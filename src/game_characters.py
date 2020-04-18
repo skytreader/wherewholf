@@ -458,7 +458,7 @@ class WholeGameHive(Hive):
     implemented.
     """
 
-    MAX_VOTE_TURNS = 100
+    MAX_LOOP_ITERS = 100
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
@@ -470,8 +470,8 @@ class WholeGameHive(Hive):
 
         # Force these players to vote!
         while len(vote_counter.most_common(1)) == 0:
-            if deadlock_counter >= WholeGameHive.MAX_VOTE_TURNS:
-                raise GameDeadLockError("Can't gather enough votes.")
+            if deadlock_counter >= WholeGameHive.MAX_LOOP_ITERS:
+                raise GameDeadLockError("Can't gather enough votes. %s" % vote_counter)
 
             for player in self.alive_players:
                 voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(nominations)
@@ -488,12 +488,22 @@ class WholeGameHive(Hive):
         for ap in aggressive_players:
             candidate: Optional[Nomination] = ap.ask_lynch_nomination(players)
             if candidate is not None:
-                self.logger.info("%s nominated %s for lynching." % (ap, candidate))
+                self.logger.info("%s nominated %s for lynching." % (candidate.nominated_by, candidate.nomination))
                 candidates.add(candidate)
         return list(candidates)
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
+        nomination_fishing_count = 0
+
+        while not(initial_candidates):
+            if nomination_fishing_count >= WholeGameHive.MAX_LOOP_ITERS:
+                raise GameDeadLockError("No one wants to nominate anyone else! Such pacifists!")
+
+            initial_candidates = self.__gather_nominations(players)
+
+            nomination_fishing_count += 1
+
         # Build a nomination map for easy reference
         nomination_map: Dict[SanitizedPlayer, SanitizedPlayer] = {
             nom.nomination: nom.nominated_by for nom in initial_candidates

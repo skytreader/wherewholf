@@ -85,6 +85,9 @@ class ValueTieCounter(Counter):
 
         super(ValueTieCounter, self).__init__()
 
+    def __str__(self) -> str:
+        return str(self.internal_counter)
+
     def __getitem__(self, key: Any) -> int:
         return self.internal_counter[key]
 
