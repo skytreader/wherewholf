@@ -114,3 +114,4 @@ class NominationTrackerTests(unittest.TestCase):
         tracker.notemination(christine, 1)
         tracker.notemination(christine, 2)
         tracker.notemination(christine, 3)
+        self.assertEqual([1, 2, 3], tracker.get_recent_turns_nominated(christine))
