@@ -109,6 +109,45 @@ class PlayerTest(unittest.TestCase):
         self.assertIsNone(aunt_hilda.ask_lynch_nomination(sanitizeds))
         self.assertIsNotNone(aunt_zee.ask_lynch_nomination(sanitizeds))
 
+    def test_aggression_deterrent(self) -> None:
+        """
+        A player that has no tolerance for aggression should not have patience
+        with aggressive players.
+        """
+        gandhi = Player("Mahatma", Villager(), nomination_recency=1)
+        duterte = Player("Rodrigo", Werewolf(), aggression=1)
+        delacruz = Player("Juan", Villager())
+        robredo = Player("Leni", Villager())
+
+        the_impossible = SanitizedPlayer.sanitize(duterte)
+
+        # Do this only for the side-effect that it increments the internal
+        # turn counter, as well as duterte's tally.
+        gandhi.daytime_behavior(
+            [
+                Nomination(
+                    SanitizedPlayer.sanitize(delacruz),
+                    the_impossible
+                )
+            ]
+        )
+        self.assertEqual(
+            the_impossible,
+            gandhi.daytime_behavior(
+                (
+                    Nomination(
+                        SanitizedPlayer.sanitize(delacruz),
+                        the_impossible
+                    ),
+                    Nomination(
+                        the_impossible,
+                        SanitizedPlayer.sanitize(robredo)
+                    )
+                )
+            )
+        )
+
+
 class HiveTest(unittest.TestCase):
 
     def setUp(self) -> None:
