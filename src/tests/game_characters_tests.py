@@ -114,7 +114,9 @@ class PlayerTest(unittest.TestCase):
         A player that has no tolerance for aggression should not have patience
         with aggressive players.
         """
-        gandhi = Player("Mahatma", Villager(), nomination_recency=1)
+        gandhi = Player(
+            "Mahatma", Villager(), suggestibility=0, nomination_recency=1
+        )
         duterte = Player("Rodrigo", Werewolf(), aggression=1)
         delacruz = Player("Juan", Villager())
         robredo = Player("Leni", Villager())
@@ -131,20 +133,21 @@ class PlayerTest(unittest.TestCase):
                 )
             ]
         )
-        self.assertEqual(
-            the_impossible,
-            gandhi.daytime_behavior(
-                (
-                    Nomination(
-                        SanitizedPlayer.sanitize(delacruz),
-                        the_impossible
-                    ),
-                    Nomination(
-                        the_impossible,
-                        SanitizedPlayer.sanitize(robredo)
-                    )
+        gandhi_choice = gandhi.daytime_behavior(
+            (
+                Nomination(
+                    SanitizedPlayer.sanitize(delacruz),
+                    the_impossible
+                ),
+                Nomination(
+                    the_impossible,
+                    SanitizedPlayer.sanitize(robredo)
                 )
             )
+        )
+        self.assertTrue(
+            gandhi_choice is the_impossible or
+            gandhi_choice is None
         )
 
 
