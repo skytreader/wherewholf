@@ -18,7 +18,6 @@ class Moderator(object):
         )
         self.__configure_logger()
         self.players: Set[Player] = players
-        self.classes: Dict[Type[GameCharacter], Set[Player]] = {}
         self.whole_game_hive: WholeGameHive = WholeGameHive()
         self.whole_game_hive.add_players(self.players)
         self.hives_map: Dict[Type[GameCharacter], Hive] = {}
@@ -27,10 +26,8 @@ class Moderator(object):
         for player in players:
             _type: Type[GameCharacter] = type(player.role)
             if type(player.role) in self.hives_map:
-                # self.classes[type(player.role)].add(player)
                 self.hives_map[_type].add_player(player)
             else:
-                # self.classes[type(player.role)] = set((player,))
                 new_hive = CHARACTER_HIVE_MAPPING[_type]()
                 self.hives.append(new_hive)
                 self.hives_map[_type] = new_hive
