@@ -1,11 +1,27 @@
 import random
 import unittest
 
+from typing import List, Tuple
+
 from ..game_characters import (
     GameCharacter, Hive, Nomination, Player, SanitizedPlayer, Villager, Werewolf,
     WerewolfHive, WholeGameHive
 )
 from typing import Dict, Optional, Sequence, Set
+
+
+class DummyHive(Hive):
+    """
+    Stand in for the Hive class so we can test the default methods.
+    """
+
+    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        print("Just a dummy hive...")
+        return None
+
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+        print("Just a dummy hive...")
+        return None
 
 
 class InspectablePlayer(Player):
@@ -26,15 +42,9 @@ class InspectablePlayer(Player):
         return super().daytime_behavior(players)
 
 
-class DummyHive(Hive):
-
-    def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        print("Just a dummy hive...")
-        return None
-
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        print("Just a dummy hive...")
-        return None
+def make_singleton_hive(hive: Hive) -> Hive:
+    hive.players = set([Player("simba", Villager)])
+    return hive
 
 
 class PlayerTest(unittest.TestCase):
@@ -189,6 +199,16 @@ class HiveTest(unittest.TestCase):
             self.christine, self.chad, self.josh
         )
         self.assertEqual(expected_top_aggressors, aggressors)
+
+    def test_singleton_consensus(self):
+        SINGLETON_HIVES_CONSENSUS: List[Tuple[Hive, int]] = [
+            (
+                make_singleton_hive(_hive), 0
+            ) for _hive in (DummyHive(), WerewolfHive(), WholeGameHive())
+        ]
+        for singleton_hive, singleton_consensus in SINGLETON_HIVES_CONSENSUS:
+            self.assertEqual(singleton_hive.consensus, singleton_consensus)
+            self.assertTrue(singleton_hive.has_reached_consensus(singleton_consensus))
 
 
 class WholeGameHiveTest(unittest.TestCase):

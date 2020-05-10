@@ -429,10 +429,16 @@ class Hive(ABC):
     @property
     def consensus(self) -> int:
         """
-        For this Hive (implementation), how many hive members must agreee before
+        For this Hive (implementation), how many hive members must agree before
         we call a consensus?
         """
         return int(len(self.players) / 2)
+
+    def has_reached_consensus(self, votes: int) -> bool:
+        """
+        Override this method to implement other majority decision schemes.
+        """
+        return votes <= self.consensus
 
     @abstractmethod
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
@@ -539,7 +545,7 @@ class WerewolfHive(Hive):
         consensus_count: int = 0
         suggestion: Optional[SanitizedPlayer] = None
 
-        while consensus_count < self.consensus:
+        while self.has_reached_consensus(consensus_count):
             potato: Player = random.choice(self._get_most_aggressive())
             suggestion = potato.night_action(players)
             self.logger.info("%s suggested to kill %s" % (potato, suggestion))
