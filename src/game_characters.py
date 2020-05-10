@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
+from src.errors import GameDeadLockError
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
 from .utils import NominationTracker, ValueTieCounter
@@ -93,6 +94,7 @@ class Player(object):
             candidate: Optional[SanitizedPlayer] = chooser(players)
 
             while candidate and player_compare(self, candidate):
+                print("%s, %s, %s" % (candidate, player_compare(self, candidate), pick_count))
                 if pick_count >= Player.UNIQUE_PICK_LIMIT:
                     return None
                 pick_count += 1
@@ -137,14 +139,12 @@ class Player(object):
         returns a value in the range [0, attr]. The distribution can be
         controlled by passing a different `decider` function.
         """
-        spam: float = decider()
-        return spam <= attr
+        return decider() <= attr
 
     def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
-        will_follow_hive = random.random()
         self.__turn_count += 1
 
-        if will_follow_hive <= self.hive_affinity and self.hive_members:
+        if self.__make_attr_decision(self.hive_affinity) and self.hive_members:
             return self.__pick_from_hive_suggestion(nominations)
         
         # Filter out nominations first based on how aggressive the nominators
@@ -173,10 +173,7 @@ class Player(object):
         # But ultimately, it is meaningless since everyone else might just
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
-        if (
-            self.__make_attr_decision(self.aggression) and
-            not self.__is_persecuted(aggression_filtered)
-        ):
+        if not self.__is_persecuted(aggression_filtered):
             return self._pick_not_me(
                 aggression_filtered,
                 self.role.daytime_behavior,
@@ -189,15 +186,16 @@ class Player(object):
         Given the players still alive in the game, get a nomination from this
         player on who to lynch.
         """
-        pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
-            players,
-            self.role.daytime_behavior,
-            SanitizedPlayer.is_the_same_player
-        )
-        if pick_on:
-            return Nomination(pick_on, SanitizedPlayer.sanitize(self))
-        else:
-            return None
+        if self.__make_attr_decision(self.aggression):
+            pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
+                players,
+                self.role.daytime_behavior,
+                SanitizedPlayer.is_the_same_player
+            )
+            if pick_on:
+                return Nomination(pick_on, SanitizedPlayer.sanitize(self))
+
+        return None
 
     def accept_night_suggestion(
         self,
@@ -431,10 +429,16 @@ class Hive(ABC):
     @property
     def consensus(self) -> int:
         """
-        For this Hive (implementation), how many hive members must agreee before
+        For this Hive (implementation), how many hive members must agree before
         we call a consensus?
         """
         return int(len(self.players) / 2)
+
+    def has_reached_consensus(self, votes: int) -> bool:
+        """
+        Override this method to implement other majority decision schemes.
+        """
+        return votes <= self.consensus
 
     @abstractmethod
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
@@ -460,20 +464,27 @@ class WholeGameHive(Hive):
     implemented.
     """
 
+    MAX_LOOP_ITERS = 100
+
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplemented("WholeGameHive is for lynching decisions only.")
 
     def __gather_votes(self, nominations: Sequence[Nomination]) -> List[Tuple[Player, int]]:
         candidates = [nom.nomination for nom in nominations]
         vote_counter: Counter = ValueTieCounter()
+        deadlock_counter = 0
 
         # Force these players to vote!
         while len(vote_counter.most_common(1)) == 0:
+            if deadlock_counter >= WholeGameHive.MAX_LOOP_ITERS:
+                raise GameDeadLockError("Can't gather enough votes. %s" % vote_counter)
+
             for player in self.alive_players:
                 voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(nominations)
                 if voted_for is not None:
                     self.logger.info("%s voted to lynch %s." % (player.name, voted_for))
                     vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
+            deadlock_counter += 1
 
         return vote_counter.most_common(1)
 
@@ -483,12 +494,22 @@ class WholeGameHive(Hive):
         for ap in aggressive_players:
             candidate: Optional[Nomination] = ap.ask_lynch_nomination(players)
             if candidate is not None:
-                self.logger.info("%s nominated %s for lynching." % (ap, candidate))
+                self.logger.info("%s nominated %s for lynching." % (candidate.nominated_by, candidate.nomination))
                 candidates.add(candidate)
         return list(candidates)
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
+        nomination_fishing_count = 0
+
+        while not(initial_candidates):
+            if nomination_fishing_count >= WholeGameHive.MAX_LOOP_ITERS:
+                raise GameDeadLockError("No one wants to nominate anyone else! Such pacifists!")
+
+            initial_candidates = self.__gather_nominations(players)
+
+            nomination_fishing_count += 1
+
         # Build a nomination map for easy reference
         nomination_map: Dict[SanitizedPlayer, SanitizedPlayer] = {
             nom.nomination: nom.nominated_by for nom in initial_candidates
@@ -524,7 +545,7 @@ class WerewolfHive(Hive):
         consensus_count: int = 0
         suggestion: Optional[SanitizedPlayer] = None
 
-        while consensus_count < self.consensus:
+        while self.has_reached_consensus(consensus_count):
             potato: Player = random.choice(self._get_most_aggressive())
             suggestion = potato.night_action(players)
             self.logger.info("%s suggested to kill %s" % (potato, suggestion))

@@ -13,25 +13,28 @@ class EndGameState(Enum):
 class Moderator(object):
 
     def __init__(self, players: Set[Player], log_discriminant: Optional[str]=None):
-        self.players: Set[Player] = players
-        self.classes: Dict[Type[GameCharacter], Set[Player]] = {}
-
-        for player in players:
-            if type(player.role) in self.classes:
-                self.classes[type(player.role)].add(player)
-            else:
-                self.classes[type(player.role)] = set((player,))
-        
-        self.werewolf_count: int = len(self.classes.get(Werewolf, []))
-        self.villager_count: int = len(self.players) - self.werewolf_count
-        self.whole_game_hive: WholeGameHive = WholeGameHive()
-        self.whole_game_hive.add_players(self.players)
         self.logger: logging.Logger = logging.getLogger(
             "moderator%s" % (log_discriminant if log_discriminant else "")
         )
         self.__configure_logger()
-
+        self.players: Set[Player] = players
+        self.whole_game_hive: WholeGameHive = WholeGameHive()
+        self.whole_game_hive.add_players(self.players)
+        self.hives_map: Dict[Type[GameCharacter], Hive] = {}
         self.hives: List[Hive] = [self.whole_game_hive]
+
+        for player in players:
+            _type: Type[GameCharacter] = type(player.role)
+            if type(player.role) in self.hives_map:
+                self.hives_map[_type].add_player(player)
+            else:
+                new_hive = CHARACTER_HIVE_MAPPING[_type]()
+                self.hives.append(new_hive)
+                self.hives_map[_type] = new_hive
+                self.hives_map[_type].add_player(player)
+        
+        self.werewolf_count: int = len(self.hives_map[Werewolf].players)
+        self.villager_count: int = len(self.players) - self.werewolf_count
 
     def __configure_logger(self, _cfg: Dict=None) -> None:
         cfg = _cfg if _cfg is not None else {}
@@ -59,7 +62,7 @@ class Moderator(object):
         Return the list of players with those belonging to the specified class
         _removed_.
         """
-        return self.players - self.classes[char_class]
+        return self.players - self.hives_map[char_class].players
 
     def __is_standoff(self) -> bool:
         return self.villager_count == 1 and self.werewolf_count == 1
@@ -68,10 +71,7 @@ class Moderator(object):
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
         # Villagers, so f*ck that fancy algorithmic shit.
-        ww_hive: Hive = CHARACTER_HIVE_MAPPING[Werewolf]()
-        ww_hive.add_players(self.classes[Werewolf])
-
-        self.hives.append(ww_hive)
+        ww_hive: Hive = self.hives_map[Werewolf]
         while self.__game_on():
             self.logger.info("The village goes to sleep...")
             self.logger.info("Werewolves wake up!")

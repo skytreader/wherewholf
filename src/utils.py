@@ -85,6 +85,9 @@ class ValueTieCounter(Counter):
 
         super(ValueTieCounter, self).__init__()
 
+    def __str__(self) -> str:
+        return str(self.internal_counter)
+
     def __getitem__(self, key: Any) -> int:
         return self.internal_counter[key]
 
@@ -227,10 +230,10 @@ class NominationTracker(object):
         else:
             self.tracking[nominated_by].append(turn)
 
-            if len(self.tracking[nominated_by]) == self.recency:
+            if len(self.tracking[nominated_by]) > self.recency:
                 self.tracking[nominated_by].pop(0)
 
-            assert len(self.tracking[nominated_by]) < self.recency
+            assert len(self.tracking[nominated_by]) <= self.recency
 
     def get_recent_turns_nominated(self, player: "SanitizedPlayer") -> List[int]:
         """
