@@ -43,7 +43,7 @@ class InspectablePlayer(Player):
 
 
 def make_singleton_hive(hive: Hive) -> Hive:
-    hive.players = set([Player("simba", Villager)])
+    hive.players = set([Player("simba", Villager())])
     return hive
 
 
