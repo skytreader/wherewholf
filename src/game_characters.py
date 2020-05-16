@@ -89,18 +89,12 @@ class Player(object):
         Given a sequence of players, use the chooser function to pick a player
         that is not _this_ player.
         """
-        if len(players):
-            pick_count = 0
-            candidate: Optional[SanitizedPlayer] = chooser(players)
-
-            while candidate and player_compare(self, candidate):
-                print("%s, %s, %s" % (candidate, player_compare(self, candidate), pick_count))
-                if pick_count >= Player.UNIQUE_PICK_LIMIT:
-                    return None
-                pick_count += 1
-                candidate = chooser(players)
-
-            return candidate
+        # Don't use players.remove because we don't want to modify the argument
+        without_me: List["SanitizedPlayer"] = [
+            _player for _player in players if not player_compare(self, _player)
+       ]
+        if len(without_me):
+            return chooser(without_me)
 
         return None
 
