@@ -50,7 +50,7 @@ def make_singleton_hive(hive: Hive) -> Hive:
 class PlayerTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.me = Player("Chad", Villager())
+        self.me: Player = Player("Chad", Villager())
         self.players: Set[Player] = set()
         self.players.add(Player("Christine", Werewolf()))
         self.players.add(Player("Shara", Werewolf()))
@@ -69,7 +69,7 @@ class PlayerTest(unittest.TestCase):
             ) for p in self.players
         ]
 
-    def test_pick_not_me(self) -> None:
+    def test_pick_not_me_solo(self) -> None:
         no_choice: Sequence[SanitizedPlayer] = [SanitizedPlayer.sanitize(self.me)]
         chosen = self.me._pick_not_me(
             no_choice,
@@ -77,6 +77,23 @@ class PlayerTest(unittest.TestCase):
             SanitizedPlayer.is_the_same_player
         )
         self.assertIsNone(chosen)
+
+    def test_pick_not_me(self) -> None:
+        REF_SANITIZED_PLAYERS: Sequence[SanitizedPlayer] = [
+            SanitizedPlayer.sanitize(_p) for _p in self.players
+        ]
+        sanitized_players: Sequence[SanitizedPlayer] = [
+            SanitizedPlayer.sanitize(_p) for _p in self.players
+        ]
+
+        for i in range(100):
+            chosen = self.me._pick_not_me(
+                sanitized_players, random.choice, SanitizedPlayer.is_the_same_player
+            )
+
+            self.assertEqual(REF_SANITIZED_PLAYERS, sanitized_players)
+            self.assertIsNotNone(chosen)
+            self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, chosen))
 
     def test_daytime_behavior(self) -> None:
         for _ in range(100):
