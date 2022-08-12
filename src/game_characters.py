@@ -540,20 +540,25 @@ class WerewolfHive(Hive):
         suggestion: Optional[SanitizedPlayer] = None
 
         while self.has_reached_consensus(consensus_count):
-            potato: Player = random.choice(self._get_most_aggressive())
-            suggestion = potato.night_action(players)
-            self.logger.info("%s suggested to kill %s" % (potato, suggestion))
+            nominant: Player = random.choice(self._get_most_aggressive())
+            suggestion = nominant.night_action(players)
+            self.logger.info("%s suggested to kill %s" % (nominant, suggestion))
+            # This is the part where hive members discuss amongst themselves if
+            # the nominated villager is killed.
             for hive_member in self.players:
-                if hive_member is not potato and suggestion is not None:
+                if hive_member is not nominant and suggestion is not None:
                     consensus_count += (
-                        1 if hive_member.accept_night_suggestion(suggestion, SanitizedPlayer.sanitize(potato)) else 0
+                        1 if hive_member.accept_night_suggestion(suggestion, SanitizedPlayer.sanitize(nominant)) else 0
                     )
 
-            if consensus_count < self.consensus:
+            if self.has_reached_consensus(consensus_count):
+                self.logger.info("Suggestion accepted")
+                break
+            else:
                 self._publish_event("CONSENSUS_NOT_REACHED", "werewolves")
                 self.logger.info("Suggestion not accepted")
-            else:
-                self.logger.info("Suggestion accepted")
+                consensus_count = 0
+
         return suggestion
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
