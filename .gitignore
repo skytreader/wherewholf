@@ -3,7 +3,17 @@
 */__pycache__/*
 *.sw?
 *~
+*.out
 *.log
 *.log.*
 *.bak
+dist/
+build/
 .mypy_cache
+
+bin/
+include/
+lib/
+lib64/
+lib64
+share/

@@ -36,7 +36,7 @@ class Moderator(object):
         self.werewolf_count: int = len(self.hives_map[Werewolf].players)
         self.villager_count: int = len(self.players) - self.werewolf_count
 
-    def __configure_logger(self, _cfg: Dict=None) -> None:
+    def __configure_logger(self, _cfg: Optional[Dict]=None) -> None:
         cfg = _cfg if _cfg is not None else {}
         log_level = cfg.get("logLevel", "INFO")
         self.logger.setLevel(logging.getLevelName(log_level))

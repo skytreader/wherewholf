@@ -101,7 +101,7 @@ class ValueTieCounter(Counter):
     def elements(self) -> Iterator[Any]:
         return self.internal_counter.elements()
 
-    def subtract(self, counts: Union[Dict, Iterable]) -> None:
+    def subtract(self, counts: Optional[Union[Mapping[Any, int], Iterable[Any]]], /, **kwds) -> None: # type: ignore[override]
         temp_counter: Counter = Counter(counts)
 
         for k, v in temp_counter.items():

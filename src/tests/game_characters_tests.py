@@ -93,7 +93,8 @@ class PlayerTest(unittest.TestCase):
 
             self.assertEqual(REF_SANITIZED_PLAYERS, sanitized_players)
             self.assertIsNotNone(chosen)
-            self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, chosen))
+            self.assertFalse(SanitizedPlayer.is_the_same_player(self.me,
+                chosen)) # type: ignore
 
     def test_daytime_behavior(self) -> None:
         for _ in range(100):

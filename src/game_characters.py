@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from src.errors import GameDeadLockError
 from src.pubsub import PubSubBroker
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, override, Sequence, Set, Tuple, Type
 from .utils import NominationTracker, ValueTieCounter
 
 import os
@@ -11,6 +11,15 @@ import logging
 
 
 CONFIGURED_LOGGERS: Dict[str, Any] = {}
+
+
+class WorldModel(object):
+
+    def __init__(self):
+        self.model_mapping: Dict["SanitizedPlayer", "GameCharacter"] = {}
+
+    def query_player(self, p: "SanitizedPlayer") -> Optional["GameCharacter"]:
+        return self.model_mapping.get(p)
 
 
 class Player(object):
@@ -60,7 +69,7 @@ class Player(object):
         if v < 0 or v > 1:
             raise ValueError("Attribute should be in the range [0, 1]")
 
-    def __configure_logger(self, _cfg: Dict=None) -> None:
+    def __configure_logger(self, _cfg: Optional[Dict]=None) -> None:
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Player") is None:
             cfg = _cfg if _cfg is not None else {}
@@ -328,7 +337,9 @@ class GameCharacter(ABC):
 
 class Werewolf(GameCharacter):
 
-    def prerequisites(self) -> Set[Type[GameCharacter]]:
+    @override
+    @property
+    def prerequisites(self) -> Set[Type["GameCharacter"]]:
         return set()
 
     def night_action(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
@@ -343,6 +354,8 @@ class Werewolf(GameCharacter):
 
 class Villager(GameCharacter):
 
+    @override
+    @property
     def prerequisites(self) -> Set[Type[GameCharacter]]:
         return set((Werewolf,))
 
@@ -377,7 +390,7 @@ class Hive(ABC):
     def can_members_know_each_other(self) -> bool:
         return False
 
-    def __configure_logger(self, _cfg: Dict=None) -> None:
+    def __configure_logger(self, _cfg: Optional[Dict]=None) -> None:
         global CONFIGURED_LOGGERS
         if CONFIGURED_LOGGERS.get("Hive") is None:
             cfg = _cfg if _cfg is not None else {}
@@ -448,7 +461,7 @@ class Hive(ABC):
         Given the list of players still in the game, this hive must decide on
         their day action for this turn.
         """
-        raise NotImplemented("This faction will not reveal itself!")
+        raise NotImplementedError("This faction will not reveal itself!")
 
 
 class WholeGameHive(Hive):
@@ -461,7 +474,7 @@ class WholeGameHive(Hive):
     MAX_LOOP_ITERS = 100
 
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        raise NotImplemented("WholeGameHive is for lynching decisions only.")
+        raise NotImplementedError("WholeGameHive is for lynching decisions only.")
 
     def __gather_votes(self, nominations: Sequence[Nomination]) -> List[Tuple[Player, int]]:
         candidates = [nom.nomination for nom in nominations]
@@ -562,7 +575,7 @@ class WerewolfHive(Hive):
         return suggestion
 
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        raise NotImplemented("This faction will not reveal itself!")
+        raise NotImplementedError("This faction will not reveal itself!")
 
 
 class VillagerHive(Hive):
