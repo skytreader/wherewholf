@@ -17,9 +17,16 @@ class WorldModel(object):
 
     def __init__(self):
         self.model_mapping: Dict["SanitizedPlayer", "GameCharacter"] = {}
+        self.hive_maps: Dict["GameCharacter", Set["SanitizedPlayer"]] = {}
 
     def query_player(self, p: "SanitizedPlayer") -> Optional["GameCharacter"]:
         return self.model_mapping.get(p)
+
+    def get_hive(self, c: "GameCharacter") -> Optional[Set["SanitizedPlayer"]]:
+        return self.hive_maps.get(c)
+
+    def map(self, p: "SanitizedPlayer", c: "GameCharacter") -> None:
+        self.model_mapping[p] = c
 
 
 class Player(object):
@@ -62,6 +69,7 @@ class Player(object):
         # Hive should not know of this automatically.
         self.hive_members: Set[Player] = set()
         self.hive_affinity: float = hive_affinity
+        self.world_model = WorldModel()
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
