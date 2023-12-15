@@ -22,11 +22,16 @@ class WorldModel(object):
     def query_player(self, p: "SanitizedPlayer") -> Optional["GameCharacter"]:
         return self.model_mapping.get(p)
 
-    def get_hive(self, c: "GameCharacter") -> Optional[Set["SanitizedPlayer"]]:
-        return self.hive_maps.get(c)
+    def get_hive(self, c: "GameCharacter") -> Set["SanitizedPlayer"]:
+        return self.hive_maps.get(c, set())
 
     def map(self, p: "SanitizedPlayer", c: "GameCharacter") -> None:
         self.model_mapping[p] = c
+
+        if self.hive_maps.get(c):
+            self.hive_maps[c].add(p)
+        else:
+            self.hive_maps[c] = set((p,))
 
 
 class Player(object):
@@ -62,12 +67,6 @@ class Player(object):
             nomination_recency
         )
         self.__turn_count: int = 0
-        # Players who belong to particular Hives (e.g., werewolves) have a
-        # mental model of who their teammates are. This knowledge should be
-        # regulated by the moderator.
-        # TODO When players change allegiances, other players in their (old)
-        # Hive should not know of this automatically.
-        self.hive_members: Set[Player] = set()
         self.hive_affinity: float = hive_affinity
         self.world_model = WorldModel()
         self.logger = logging.getLogger("Player")
@@ -115,29 +114,24 @@ class Player(object):
 
         return None
 
+    @property
+    def hive_members(self):
+        return self.world_model.get_hive(self.role)
+
     def __pick_from_hive_suggestion(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
-        # FIXME Maybe: *Can* be slow
-        # Filter out the nominations first...
-        def is_hivemate(sp: SanitizedPlayer) -> bool:
-            """
-            This method is placed here so as to prevent other methods of this
-            class from deducing possible game state changes it should not be
-            privy to; you can potentially use this to observe allegiance changes!
-            """
-            for member in self.hive_members:
-                if SanitizedPlayer.is_the_same_player(member, sp):
-                    return True
-
-            return False
-
         teammate_noms: Set["Nomination"] = set([
-            nom for nom in nominations if is_hivemate(nom.nominated_by)
+            nom for nom in nominations if (
+                nom.nominated_by in self.hive_members
+            )
         ])
 
         if not teammate_noms:
             return None
         else:
             return random.choice(list(teammate_noms)).nomination
+
+    def learn_hive_member(self, sanitized_player: "SanitizedPlayer"):
+        self.world_model.map(sanitized_player, self.role)
     
     def __make_attr_decision(
         self,

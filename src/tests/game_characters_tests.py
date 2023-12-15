@@ -105,7 +105,9 @@ class PlayerTest(unittest.TestCase):
     def test_hive_affinity(self) -> None:
         mark: Player = Player("Mark", Werewolf(), hive_affinity=1.0)
         self.werewolf_hive.add_player(mark)
-        mark.hive_members = self.werewolf_hive.players
+        for player in self.werewolf_hive.players:
+            mark.learn_hive_member(SanitizedPlayer.sanitize(player))
+
         nominations = [
             Nomination(
                 SanitizedPlayer.sanitize(self.player_map["Chad"]),

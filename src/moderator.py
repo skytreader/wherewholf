@@ -79,7 +79,8 @@ class Moderator(object):
             # In the future, in a more abstracted version of the game, use the
             # `can_members_know_each_other` property of Hives.
             for werewolf in ww_hive.players:
-                werewolf.hive_members = ww_hive.players
+                for player in ww_hive.players:
+                    werewolf.learn_hive_member(SanitizedPlayer.sanitize(player))
             dead_by_wolf: Optional[SanitizedPlayer] = ww_hive.night_consensus(self.__batch_sanitize(self.__filter_members(Werewolf)))
 
             if dead_by_wolf is not None:
