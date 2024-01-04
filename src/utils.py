@@ -235,7 +235,7 @@ class NominationTracker(object):
 
             assert len(self.tracking[nominated_by]) <= self.recency
 
-    def get_recent_turns_nominated(self, player: "SanitizedPlayer") -> List[int]:
+    def get_recent_turns_nomination_made(self, player: "SanitizedPlayer") -> List[int]:
         """
         Get the last n turns when the given player made a nomination, where n
         is the recency parameter given to this NominationTracker.

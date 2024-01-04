@@ -160,13 +160,11 @@ class Player(object):
             self.nomination_tracker.notemination(
                 nom.nominated_by, self.__turn_count
             )
-            recent_turns = self.nomination_tracker.get_recent_turns_nominated(
+            recent_turns = self.nomination_tracker.get_recent_turns_nomination_made(
                 nom.nominated_by
             )
-            # The only time nomination from an aggressive player won't be
-            # considered is when nomination is not recent (i.e., nominating
-            # player is perceived as being too aggressive) and the considering
-            # player is not suggestible---suggestibility is a huge factor here!
+            # Aggressive players will be seen as too pushy and, hence, less
+            # credible.
             if not (
                 min(recent_turns) >= last_turn_of_note and
                 not self.__make_attr_decision(self.suggestibility)
@@ -234,25 +232,28 @@ class SanitizedPlayer(object):
     
     __SANITATION_CACHE: Dict[Player, "SanitizedPlayer"] = {}
     __PLAYER_MEMORY: Dict["SanitizedPlayer", Player] = {}
+    __create_key = object()
 
-    def __init__(self, player: Player):
+    def __init__(self, create_key: Any, player: Player):
         """
         NOTE: DO NOT USE THIS CONSTRUCTOR! This class "caches" SanitizedPlayers
         for speed and tracking and it's messy to do that in the constructor. To
         sanitize players, use the `sanitize` static method instead.
         """
+        if create_key is not SanitizedPlayer.__create_key:
+            raise Exception("Please use SanitizedPlayer.sanitize to create SanitizedPlayers.")
         self.name: str = player.name
         self.aggression: float = player.aggression
         self.persuasiveness : float = player.persuasiveness
 
-    @staticmethod
-    def sanitize(player: Player) -> "SanitizedPlayer":
+    @classmethod
+    def sanitize(cls, player: Player) -> "SanitizedPlayer":
         exists: Optional[SanitizedPlayer] = SanitizedPlayer.__SANITATION_CACHE.get(player)
 
         if exists:
             return exists
         else:
-            sanitized: SanitizedPlayer = SanitizedPlayer(player)
+            sanitized: SanitizedPlayer = SanitizedPlayer(cls.__create_key, player)
             SanitizedPlayer.__SANITATION_CACHE[player] = sanitized
             SanitizedPlayer.__PLAYER_MEMORY[sanitized] = player
             return sanitized
@@ -375,8 +376,8 @@ class Villager(GameCharacter):
 
 class Hive(ABC):
     """
-    A Hive represents a group of players (who are often under the same role)
-    and their collective decisions throughout the game.
+    A Hive represents a group of players who need to decide collectively at
+    various points of the game.
     """
 
     def __init__(self, pubsub_broker: Optional[PubSubBroker]=None):

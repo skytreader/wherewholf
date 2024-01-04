@@ -109,9 +109,9 @@ class NominationTrackerTests(unittest.TestCase):
 
     def test_nomination_tracker(self) -> None:
         tracker = NominationTracker(3)
-        christine: SanitizedPlayer = SanitizedPlayer(Player("Christine", Werewolf()))
-        self.assertEqual([], tracker.get_recent_turns_nominated(christine))
+        christine: SanitizedPlayer = SanitizedPlayer.sanitize(Player("Christine", Werewolf()))
+        self.assertEqual([], tracker.get_recent_turns_nomination_made(christine))
         tracker.notemination(christine, 1)
         tracker.notemination(christine, 2)
         tracker.notemination(christine, 3)
-        self.assertEqual([1, 2, 3], tracker.get_recent_turns_nominated(christine))
+        self.assertEqual([1, 2, 3], tracker.get_recent_turns_nomination_made(christine))
