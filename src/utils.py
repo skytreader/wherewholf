@@ -216,7 +216,7 @@ class MarkovChain(object):
 
         return self.causes[cause][effect] / self.cause_occurences[cause]
 
-class NominationTracker(object):
+class NominationRecencyTracker(object):
 
     def __init__(self, recency: int):
         self.recency: int = recency

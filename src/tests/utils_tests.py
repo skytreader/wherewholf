@@ -2,7 +2,7 @@ import unittest
 
 from collections import Counter
 from typing import Any, Iterable, List, Sequence, Tuple
-from ..utils import MarkovChain, NominationTracker, ValueTieCounter
+from ..utils import MarkovChain, NominationRecencyTracker, ValueTieCounter
 from ..game_characters import Player, SanitizedPlayer, Villager, Werewolf
 
 
@@ -105,10 +105,10 @@ class MarkovChainTests(unittest.TestCase):
         self.assertAlmostEqual(0.66, mc.running_probability("shara", "villager dead"), delta=0.01)
         self.assertAlmostEqual(0.33, mc.running_probability("shara", "werewolf dead"), delta=0.01)
 
-class NominationTrackerTests(unittest.TestCase):
+class NominationRecencyTrackerTests(unittest.TestCase):
 
-    def test_nomination_tracker(self) -> None:
-        tracker = NominationTracker(3)
+    def test_nomination_recency_tracker(self) -> None:
+        tracker = NominationRecencyTracker(3)
         christine: SanitizedPlayer = SanitizedPlayer.sanitize(Player("Christine", Werewolf()))
         self.assertEqual([], tracker.get_recent_turns_nomination_made(christine))
         tracker.notemination(christine, 1)

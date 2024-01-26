@@ -1,6 +1,7 @@
 from enum import Enum
-from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager
+from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager, VoteTable
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type
+from .utils import ValueTieCounter
 
 import logging
 
@@ -67,6 +68,15 @@ class Moderator(object):
     def __is_standoff(self) -> bool:
         return self.villager_count == 1 and self.werewolf_count == 1
 
+    def __count_votes(self, vote_table: VoteTable) -> List[SanitizedPlayer]:
+        vote_counter = ValueTieCounter()
+        
+        for voter in vote_table:
+            if vote_table[voter] is not None:
+                vote_counter[vote_table[voter]] += 1
+
+        return [t[0] for t in vote_counter.most_common(1)]
+
     def play(self) -> "EndGameState":
         # Ideally we want this to topo-sort the included characters and then
         # play them based on that but right now we only have Werewolves and
@@ -100,10 +110,19 @@ class Moderator(object):
                     break
 
                 self.logger.info("Vote now who to lynch...")
-                lynched: Optional[SanitizedPlayer] = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
-                assert lynched is not None
-                assert type(lynched) is SanitizedPlayer
-                role_of_the_lynched = SanitizedPlayer.recover_player_identity(lynched).role
+                vote_table: VoteTable = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                consensus: List[SanitizedPlayer] = self.__count_votes(vote_table)
+
+                while len(consensus) > 1:
+                    self.logger.info("Tie among %s" % str(consensus))
+                    vote_table = self.whole_game_hive.day_consensus(consensus)
+                    consensus = self.__count_votes(vote_table)
+
+                assert len(consensus) == 1
+                lynched = consensus[0]
+                assert lynched is None or type(lynched) is SanitizedPlayer
+                original_player = SanitizedPlayer.recover_player_identity(lynched)
+                role_of_the_lynched = original_player.role
 
                 self.logger.info("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
 
@@ -111,7 +130,7 @@ class Moderator(object):
                     self.villager_count -= 1
                 else:
                     self.werewolf_count -= 1
-                self.__kill_player(SanitizedPlayer.recover_player_identity(lynched))
+                self.__kill_player(original_player)
 
         if self.villager_count < self.werewolf_count:
             self.logger.info("The werewolves won!")

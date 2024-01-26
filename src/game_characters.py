@@ -3,7 +3,7 @@ from collections import Counter
 from src.errors import GameDeadLockError
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, override, Sequence, Set, Tuple, Type
-from .utils import NominationTracker, ValueTieCounter
+from .utils import NominationRecencyTracker, ValueTieCounter
 
 import os
 import random
@@ -11,6 +11,7 @@ import logging
 
 
 CONFIGURED_LOGGERS: Dict[str, Any] = {}
+VoteTable = Dict["SanitizedPlayer", Optional["SanitizedPlayer"]]
 
 
 class WorldModel(object):
@@ -63,7 +64,7 @@ class Player(object):
         # determines how likely this player is to persuade others in hive
         # actions. Can also be a measure of how good this player is at lying.
         self.persuasiveness: float = persuasiveness
-        self.nomination_tracker: NominationTracker = NominationTracker(
+        self.nomination_recency: NominationRecencyTracker = NominationRecencyTracker(
             nomination_recency
         )
         self.__turn_count: int = 0
@@ -154,13 +155,13 @@ class Player(object):
         
         # Filter out nominations first based on how aggressive the nominators
         # are, coupled with how suggestible this player is.
-        last_turn_of_note = self.__turn_count - self.nomination_tracker.recency
+        last_turn_of_note = self.__turn_count - self.nomination_recency.recency
         aggression_filtered: List[SanitizedPlayer] = []
         for nom in nominations:
-            self.nomination_tracker.notemination(
+            self.nomination_recency.notemination(
                 nom.nominated_by, self.__turn_count
             )
-            recent_turns = self.nomination_tracker.get_recent_turns_nomination_made(
+            recent_turns = self.nomination_recency.get_recent_turns_nomination_made(
                 nom.nominated_by
             )
             # Aggressive players will be seen as too pushy and, hence, less
@@ -212,6 +213,19 @@ class Player(object):
             self.suggestibility * suggested_by.persuasiveness
         )
 
+    def react_to_lynch_result(
+        self,
+        nominated_by: "SanitizedPlayer",
+        victim: "Player",
+        vote_table: VoteTable
+    ) -> None:
+        """
+        At the end of the day, the result of the lynching vote is broadcasted to
+        all remaining players. They can react/adjust their world models based on
+        the result of this vote.
+        """
+        pass
+
     def __eq__(self, other: Any) -> bool:
         return all((
             self.name == other.name,
@@ -248,6 +262,10 @@ class SanitizedPlayer(object):
 
     @classmethod
     def sanitize(cls, player: Player) -> "SanitizedPlayer":
+        # FIXME later when we allow role swapping effects, we also have to check
+        # if __PLAYER_MEMORY still corresponds to the actual roles in the game.
+        # Consider also that this makes a coupling between this class and the
+        # game state.
         exists: Optional[SanitizedPlayer] = SanitizedPlayer.__SANITATION_CACHE.get(player)
 
         if exists:
@@ -459,10 +477,12 @@ class Hive(ABC):
         pass
 
     @abstractmethod
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
         """
         Given the list of players still in the game, this hive must decide on
         their day action for this turn.
+
+        (FIXME It seems that only the WholeGameHive would really use this.)
         """
         raise NotImplementedError("This faction will not reveal itself!")
 
@@ -479,9 +499,10 @@ class WholeGameHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         raise NotImplementedError("WholeGameHive is for lynching decisions only.")
 
-    def __gather_votes(self, nominations: Sequence[Nomination]) -> List[Tuple[Player, int]]:
+    def __gather_votes(self, nominations: Sequence[Nomination]) -> VoteTable:
         candidates = [nom.nomination for nom in nominations]
         vote_counter: Counter = ValueTieCounter()
+        vote_table: VoteTable = {}
         deadlock_counter = 0
 
         # Force these players to vote!
@@ -491,12 +512,13 @@ class WholeGameHive(Hive):
 
             for player in self.alive_players:
                 voted_for: Optional[SanitizedPlayer] = player.daytime_behavior(nominations)
+                vote_table[SanitizedPlayer.sanitize(player)] = voted_for
                 if voted_for is not None:
                     self.logger.info("%s voted to lynch %s." % (player.name, voted_for))
                     vote_counter[SanitizedPlayer.recover_player_identity(voted_for)] += 1
             deadlock_counter += 1
 
-        return vote_counter.most_common(1)
+        return vote_table
 
     def __gather_nominations(self, players: Sequence[SanitizedPlayer]) -> Sequence[Nomination]:
         aggressive_players: Tuple[Player, ...] = self._get_most_aggressive()
@@ -508,7 +530,7 @@ class WholeGameHive(Hive):
                 candidates.add(candidate)
         return list(candidates)
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
         initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
         nomination_fishing_count = 0
 
@@ -526,20 +548,7 @@ class WholeGameHive(Hive):
         }
 
         self.logger.info("The candidates for lynching are %s" % initial_candidates)
-        consensus: List[Tuple[Player, int]] = self.__gather_votes(initial_candidates)
-
-        while len(consensus) > 1:
-            candidate_players: List[Player] = [vote_tuple[0] for vote_tuple in consensus]
-            self.logger.info("Tie between %s" % str(candidate_players))
-            tied_nominations = [
-                Nomination(
-                    SanitizedPlayer.sanitize(p),
-                    nomination_map[SanitizedPlayer.sanitize(p)]
-                ) for p in candidate_players
-            ]
-            consensus = self.__gather_votes(tied_nominations)
-            self.logger.debug(consensus)
-        return SanitizedPlayer.sanitize(consensus[0][0])
+        return self.__gather_votes(initial_candidates)
 
 
 class WerewolfHive(Hive):
@@ -577,8 +586,8 @@ class WerewolfHive(Hive):
 
         return suggestion
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        raise NotImplementedError("This faction will not reveal itself!")
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
+        return {}
 
 
 class VillagerHive(Hive):
@@ -586,8 +595,8 @@ class VillagerHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return None
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
-        return None
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
+        return {}
 
 
 CHARACTER_HIVE_MAPPING: Dict[Type["GameCharacter"], Type["Hive"]] = {
