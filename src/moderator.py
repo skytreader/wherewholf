@@ -1,5 +1,5 @@
 from enum import Enum
-from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager, VoteTable
+from .game_characters import CHARACTER_HIVE_MAPPING, GameCharacter, Hive, NominationMap, Player, SanitizedPlayer, Werewolf, WholeGameHive, Villager, VoteTable
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type
 from .utils import ValueTieCounter
 
@@ -75,6 +75,7 @@ class Moderator(object):
             if vote_table[voter] is not None:
                 vote_counter[vote_table[voter]] += 1
 
+        # TODO We might also want to make sure that we have an actual majority.
         return [t[0] for t in vote_counter.most_common(1)]
 
     def play(self) -> "EndGameState":
@@ -110,12 +111,12 @@ class Moderator(object):
                     break
 
                 self.logger.info("Vote now who to lynch...")
-                vote_table: VoteTable = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                nomination_map, vote_table = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
                 consensus: List[SanitizedPlayer] = self.__count_votes(vote_table)
 
                 while len(consensus) > 1:
                     self.logger.info("Tie among %s" % str(consensus))
-                    vote_table = self.whole_game_hive.day_consensus(consensus)
+                    nomination_map, vote_table = self.whole_game_hive.day_consensus(consensus)
                     consensus = self.__count_votes(vote_table)
 
                 assert len(consensus) == 1

@@ -4,10 +4,10 @@ import unittest
 from typing import List, Tuple
 
 from ..game_characters import (
-    GameCharacter, Hive, Nomination, Player, SanitizedPlayer, Villager, VoteTable,
+    GameCharacter, Hive, Nomination, NominationMap, Player, SanitizedPlayer, Villager, VoteTable,
     Werewolf, WerewolfHive, WholeGameHive
 )
-from typing import Dict, Optional, Sequence, Set
+from typing import Dict, Optional, Sequence, Set, Tuple
 
 
 class DummyHive(Hive):
@@ -19,9 +19,9 @@ class DummyHive(Hive):
         print("Just a dummy hive...")
         return None
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
         print("Just a dummy hive...")
-        return {}
+        return ({}, {})
 
 
 class InspectablePlayer(Player):

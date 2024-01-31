@@ -12,6 +12,7 @@ import logging
 
 CONFIGURED_LOGGERS: Dict[str, Any] = {}
 VoteTable = Dict["SanitizedPlayer", Optional["SanitizedPlayer"]]
+NominationMap = Dict["SanitizedPlayer", "SanitizedPlayer"]
 
 
 class WorldModel(object):
@@ -215,9 +216,9 @@ class Player(object):
 
     def react_to_lynch_result(
         self,
-        nominated_by: "SanitizedPlayer",
+        final_nominations: NominationMap,
         victim: "Player",
-        vote_table: VoteTable
+        final_vote_table: VoteTable
     ) -> None:
         """
         At the end of the day, the result of the lynching vote is broadcasted to
@@ -477,7 +478,7 @@ class Hive(ABC):
         pass
 
     @abstractmethod
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
         """
         Given the list of players still in the game, this hive must decide on
         their day action for this turn.
@@ -530,7 +531,7 @@ class WholeGameHive(Hive):
                 candidates.add(candidate)
         return list(candidates)
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
         initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
         nomination_fishing_count = 0
 
@@ -543,12 +544,12 @@ class WholeGameHive(Hive):
             nomination_fishing_count += 1
 
         # Build a nomination map for easy reference
-        nomination_map: Dict[SanitizedPlayer, SanitizedPlayer] = {
+        nomination_map: NominationMap = {
             nom.nomination: nom.nominated_by for nom in initial_candidates
         }
 
         self.logger.info("The candidates for lynching are %s" % initial_candidates)
-        return self.__gather_votes(initial_candidates)
+        return (nomination_map, self.__gather_votes(initial_candidates))
 
 
 class WerewolfHive(Hive):
@@ -586,8 +587,8 @@ class WerewolfHive(Hive):
 
         return suggestion
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
-        return {}
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
+        return ({}, {})
 
 
 class VillagerHive(Hive):
@@ -595,8 +596,8 @@ class VillagerHive(Hive):
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         return None
 
-    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> VoteTable:
-        return {}
+    def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
+        return ({}, {})
 
 
 CHARACTER_HIVE_MAPPING: Dict[Type["GameCharacter"], Type["Hive"]] = {
