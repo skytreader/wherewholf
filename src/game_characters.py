@@ -71,6 +71,7 @@ class Player(object):
         self.__turn_count: int = 0
         self.hive_affinity: float = hive_affinity
         self.world_model = WorldModel()
+        self.nominated_this_turn: Optional["SanitizedPlayer"] = None
         self.logger = logging.getLogger("Player")
         self.__configure_logger()
 
@@ -148,39 +149,52 @@ class Player(object):
         """
         return decider() <= attr
 
+    def __is_player_credible(self, player: "SanitizedPlayer") -> bool:
+        # Very simple for now
+        return type(self.world_model.query_player(player)) is not Werewolf
+
+    def __is_nomination_accepted(self, nomination: "Nomination") -> bool:
+        last_turn_of_note = self.__turn_count - self.nomination_recency.recency
+        recent_turns = self.nomination_recency.get_recent_turns_nomination_made(
+            nomination.nominated_by
+        )
+        # Aggressive players will be seen as too pushy and, hence, less
+        # credible.
+        return not (
+            min(recent_turns) >= last_turn_of_note and
+            not self.__make_attr_decision(self.suggestibility)
+        ) and self.__is_player_credible(nomination.nominated_by)
+
     def daytime_behavior(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
         self.__turn_count += 1
+
+        if self.nominated_this_turn is not None:
+            _conviction_vote = self.nominated_this_turn
+            self.nominated_this_turn = None
+            return _conviction_vote
 
         if self.__make_attr_decision(self.hive_affinity) and self.hive_members:
             return self.__pick_from_hive_suggestion(nominations)
         
         # Filter out nominations first based on how aggressive the nominators
         # are, coupled with how suggestible this player is.
-        last_turn_of_note = self.__turn_count - self.nomination_recency.recency
-        aggression_filtered: List[SanitizedPlayer] = []
+        considered_nominations: List[SanitizedPlayer] = []
         for nom in nominations:
             self.nomination_recency.notemination(
                 nom.nominated_by, self.__turn_count
             )
-            recent_turns = self.nomination_recency.get_recent_turns_nomination_made(
-                nom.nominated_by
-            )
-            # Aggressive players will be seen as too pushy and, hence, less
-            # credible.
-            if not (
-                min(recent_turns) >= last_turn_of_note and
-                not self.__make_attr_decision(self.suggestibility)
-            ):
-                aggression_filtered.append(nom.nomination)
+
+            if self.__is_nomination_accepted(nom):
+                considered_nominations.append(nom.nomination)
 
         # If you are persecuted, might as well abstain. In a final show of
         # defiance, you might want to vote someone else just for the heck of it.
         # But ultimately, it is meaningless since everyone else might just
         # choose you. So we won't waste instruction cycles on your admirable yet
         # all the same pointless act.
-        if not self.__is_persecuted(aggression_filtered):
+        if not self.__is_persecuted(considered_nominations):
             return self._pick_not_me(
-                aggression_filtered,
+                considered_nominations,
                 self.role.daytime_behavior,
                 SanitizedPlayer.is_the_same_player
             )
@@ -192,13 +206,14 @@ class Player(object):
         player on who to lynch.
         """
         if self.__make_attr_decision(self.aggression):
-            pick_on: Optional[SanitizedPlayer] = self._pick_not_me(
+            pick: Optional[SanitizedPlayer] = self._pick_not_me(
                 players,
                 self.role.daytime_behavior,
                 SanitizedPlayer.is_the_same_player
             )
-            if pick_on:
-                return Nomination(pick_on, SanitizedPlayer.sanitize(self))
+            if pick:
+                self.nominated_this_turn = pick
+                return Nomination(pick, SanitizedPlayer.sanitize(self))
 
         return None
 
