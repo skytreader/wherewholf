@@ -18,16 +18,16 @@ NominationMap = Dict["SanitizedPlayer", "SanitizedPlayer"]
 class WorldModel(object):
 
     def __init__(self):
-        self.model_mapping: Dict["SanitizedPlayer", "GameCharacter"] = {}
-        self.hive_maps: Dict["GameCharacter", Set["SanitizedPlayer"]] = {}
+        self.model_mapping: Dict["SanitizedPlayer", Type["GameCharacter"]] = {}
+        self.hive_maps: Dict[Type["GameCharacter"], Set["SanitizedPlayer"]] = {}
 
-    def query_player(self, p: "SanitizedPlayer") -> Optional["GameCharacter"]:
+    def query_player(self, p: "SanitizedPlayer") -> Optional[Type["GameCharacter"]]:
         return self.model_mapping.get(p)
 
-    def get_hive(self, c: "GameCharacter") -> Set["SanitizedPlayer"]:
+    def get_hive(self, c: Type["GameCharacter"]) -> Set["SanitizedPlayer"]:
         return self.hive_maps.get(c, set())
 
-    def map(self, p: "SanitizedPlayer", c: "GameCharacter") -> None:
+    def map(self, p: "SanitizedPlayer", c: Type["GameCharacter"]) -> None:
         self.model_mapping[p] = c
 
         if self.hive_maps.get(c):
@@ -108,6 +108,7 @@ class Player(object):
         Given a sequence of players, use the chooser function to pick a player
         that is not _this_ player.
         """
+        # TODO Maybe if you know your hivemates for certain, don't pick them.
         # Don't use players.remove because we don't want to modify the argument
         without_me: List["SanitizedPlayer"] = [
             _player for _player in players if not player_compare(self, _player)
@@ -119,7 +120,7 @@ class Player(object):
 
     @property
     def hive_members(self):
-        return self.world_model.get_hive(self.role)
+        return self.world_model.get_hive(type(self.role))
 
     def __pick_from_hive_suggestion(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
         teammate_noms: Set["Nomination"] = set([
@@ -134,7 +135,7 @@ class Player(object):
             return random.choice(list(teammate_noms)).nomination
 
     def learn_hive_member(self, sanitized_player: "SanitizedPlayer"):
-        self.world_model.map(sanitized_player, self.role)
+        self.world_model.map(sanitized_player, type(self.role))
     
     def __make_attr_decision(
         self,
@@ -151,7 +152,7 @@ class Player(object):
 
     def __is_player_credible(self, player: "SanitizedPlayer") -> bool:
         # Very simple for now
-        return type(self.world_model.query_player(player)) is not Werewolf
+        return self.world_model.query_player(player) is not Werewolf
 
     def __is_nomination_accepted(self, nomination: "Nomination") -> bool:
         last_turn_of_note = self.__turn_count - self.nomination_recency.recency
@@ -169,9 +170,9 @@ class Player(object):
         self.__turn_count += 1
 
         if self.nominated_this_turn is not None:
-            _conviction_vote = self.nominated_this_turn
+            conviction_vote = self.nominated_this_turn
             self.nominated_this_turn = None
-            return _conviction_vote
+            return conviction_vote
 
         if self.__make_attr_decision(self.hive_affinity) and self.hive_members:
             return self.__pick_from_hive_suggestion(nominations)
@@ -240,7 +241,15 @@ class Player(object):
         all remaining players. They can react/adjust their world models based on
         the result of this vote.
         """
-        pass
+        victim_sanitized = SanitizedPlayer.sanitize(victim)
+        if type(victim.role) is not Werewolf:
+            for nominator in final_nominations:
+                if final_nominations[nominator] is victim_sanitized:
+                    self.world_model.map(nominator, Werewolf)
+
+            for voter in final_vote_table:
+                if final_vote_table[voter] is victim_sanitized:
+                    self.world_model.map(voter, Werewolf)
 
     def __eq__(self, other: Any) -> bool:
         return all((

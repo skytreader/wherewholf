@@ -126,6 +126,12 @@ class Moderator(object):
                 role_of_the_lynched = original_player.role
 
                 self.logger.info("You chose to lynch %s, a %s!" % (lynched.name, role_of_the_lynched))
+                for player in self.players:
+                    player.react_to_lynch_result(
+                        nomination_map,
+                        original_player,
+                        vote_table
+                    )
 
                 if type(role_of_the_lynched) == Villager:
                     self.villager_count -= 1
