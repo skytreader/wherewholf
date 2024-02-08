@@ -53,7 +53,7 @@ class Moderator(object):
             hive.notify_player_death(player)
 
     def __game_on(self) -> bool:
-        return self.villager_count >= self.werewolf_count and self.werewolf_count > 0 and not self.__is_standoff()
+        return self.villager_count >= self.werewolf_count and self.werewolf_count > 0
 
     def __batch_sanitize(self, players: Iterable[Player]) -> Sequence[SanitizedPlayer]:
         return [SanitizedPlayer.sanitize(player) for player in players]
@@ -64,9 +64,6 @@ class Moderator(object):
         _removed_.
         """
         return self.players - self.hives_map[char_class].players
-
-    def __is_standoff(self) -> bool:
-        return self.villager_count == 1 and self.werewolf_count == 1
 
     def __count_votes(self, vote_table: VoteTable) -> List[SanitizedPlayer]:
         vote_counter = ValueTieCounter()
@@ -107,7 +104,7 @@ class Moderator(object):
                     self.werewolf_count -= 1
                 self.__kill_player(SanitizedPlayer.recover_player_identity(dead_by_wolf))
 
-                if self.villager_count < self.werewolf_count or self.__is_standoff():
+                if self.villager_count <= self.werewolf_count:
                     break
 
                 self.logger.info("Vote now who to lynch...")
@@ -139,15 +136,12 @@ class Moderator(object):
                     self.werewolf_count -= 1
                 self.__kill_player(original_player)
 
-        if self.villager_count < self.werewolf_count:
+        if self.villager_count <= self.werewolf_count:
             self.logger.info("The werewolves won!")
             return EndGameState.WEREWOLVES_WON
         elif self.werewolf_count == 0:
             self.logger.info("The villagers won!")
             return EndGameState.VILLAGERS_WON
-        elif self.__is_standoff():
-            self.logger.info("It's a draw!")
-            return EndGameState.DRAW
         else:
             self.logger.error("Unknown endgame condition. Status: villagers=%s, werewolves=%s." % (self.villager_count, self.werewolf_count))
             return EndGameState.UNKNOWN_CONDITION
