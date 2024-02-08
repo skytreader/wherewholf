@@ -3,7 +3,7 @@ from collections.abc import Iterable as IterableBaseClass
 
 from typing import (
     Any, Counter as t_Counter, Dict, Iterable, Iterator, List, Mapping,
-    Optional, Set, Sequence, Tuple, TYPE_CHECKING, Union
+    Optional, Set, Sequence, Tuple, Type, TYPE_CHECKING, Union
 )
 
 import _collections_abc
@@ -11,7 +11,7 @@ import logging
 import os
 
 if TYPE_CHECKING:
-    from .game_characters import SanitizedPlayer
+    from .game_characters import GameCharacter, SanitizedPlayer
 
 
 logger: logging.Logger = logging.getLogger("WHEREWHOLF_UTILS")
@@ -241,3 +241,26 @@ class NominationRecencyTracker(object):
         is the recency parameter given to this NominationTracker.
         """
         return self.tracking.get(player, [])
+
+class WorldModel(object):
+
+    def __init__(self):
+        self.model_mapping: Dict["SanitizedPlayer", Type["GameCharacter"]] = {}
+        self.hive_maps: Dict[Type["GameCharacter"], Set["SanitizedPlayer"]] = {}
+
+    def query_player(self, p: "SanitizedPlayer") -> Optional[Type["GameCharacter"]]:
+        return self.model_mapping.get(p)
+
+    def get_hive(self, c: Type["GameCharacter"]) -> Set["SanitizedPlayer"]:
+        return self.hive_maps.get(c, set())
+
+    def map(self, p: "SanitizedPlayer", c: Type["GameCharacter"]) -> None:
+        old_character = self.query_player(p)
+        if old_character:
+            self.hive_maps[old_character].remove(p)
+        self.model_mapping[p] = c
+
+        if self.hive_maps.get(c):
+            self.hive_maps[c].add(p)
+        else:
+            self.hive_maps[c] = set((p,))

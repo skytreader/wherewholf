@@ -3,7 +3,7 @@ from collections import Counter
 from src.errors import GameDeadLockError
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, override, Sequence, Set, Tuple, Type
-from .utils import NominationRecencyTracker, ValueTieCounter
+from .utils import NominationRecencyTracker, ValueTieCounter, WorldModel
 
 import os
 import random
@@ -13,27 +13,6 @@ import logging
 CONFIGURED_LOGGERS: Dict[str, Any] = {}
 VoteTable = Dict["SanitizedPlayer", Optional["SanitizedPlayer"]]
 NominationMap = Dict["SanitizedPlayer", "SanitizedPlayer"]
-
-
-class WorldModel(object):
-
-    def __init__(self):
-        self.model_mapping: Dict["SanitizedPlayer", Type["GameCharacter"]] = {}
-        self.hive_maps: Dict[Type["GameCharacter"], Set["SanitizedPlayer"]] = {}
-
-    def query_player(self, p: "SanitizedPlayer") -> Optional[Type["GameCharacter"]]:
-        return self.model_mapping.get(p)
-
-    def get_hive(self, c: Type["GameCharacter"]) -> Set["SanitizedPlayer"]:
-        return self.hive_maps.get(c, set())
-
-    def map(self, p: "SanitizedPlayer", c: Type["GameCharacter"]) -> None:
-        self.model_mapping[p] = c
-
-        if self.hive_maps.get(c):
-            self.hive_maps[c].add(p)
-        else:
-            self.hive_maps[c] = set((p,))
 
 
 class Player(object):

@@ -2,7 +2,7 @@ import unittest
 
 from collections import Counter
 from typing import Any, Iterable, List, Sequence, Tuple
-from ..utils import MarkovChain, NominationRecencyTracker, ValueTieCounter
+from ..utils import MarkovChain, NominationRecencyTracker, ValueTieCounter, WorldModel
 from ..game_characters import Player, SanitizedPlayer, Villager, Werewolf
 
 
@@ -115,3 +115,19 @@ class NominationRecencyTrackerTests(unittest.TestCase):
         tracker.notemination(christine, 2)
         tracker.notemination(christine, 3)
         self.assertEqual([1, 2, 3], tracker.get_recent_turns_nomination_made(christine))
+
+class WorldModelTests(unittest.TestCase):
+
+    def test_one_hive_policy(self) -> None:
+        world_model = WorldModel()
+        chad: SanitizedPlayer = SanitizedPlayer.sanitize(Player("Chad", Villager()))
+        # This is a mistake. Chad is never a werewolf!
+        world_model.map(chad, Werewolf)
+        self.assertEqual(world_model.query_player(chad), Werewolf)
+        self.assertTrue(chad in world_model.get_hive(Werewolf))
+        # Let's correct this grave mistake
+        world_model.map(chad, Villager)
+        self.assertEqual(world_model.query_player(chad), Villager)
+        self.assertNotEqual(world_model.query_player(chad), Werewolf)
+        self.assertTrue(chad in world_model.get_hive(Villager))
+        self.assertFalse(chad in world_model.get_hive(Werewolf))
