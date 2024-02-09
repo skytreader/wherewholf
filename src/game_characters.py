@@ -327,6 +327,9 @@ class Nomination(object):
     def __hash__(self) -> int:
         return hash((self.nomination, self.nominated_by))
 
+    def __str__(self) -> str:
+        return "(%s -nominated-> %s)" % (self.nominated_by, self.nomination)
+
 
 class GameCharacter(ABC):
     """
@@ -551,7 +554,7 @@ class WholeGameHive(Hive):
             nom.nomination: nom.nominated_by for nom in initial_candidates
         }
 
-        self.logger.info("The candidates for lynching are %s" % initial_candidates)
+        self.logger.info("The nominations for lynching are %s" % " ".join((str(_) for _ in initial_candidates)))
         return (nomination_map, self.__gather_votes(initial_candidates))
 
 
@@ -581,11 +584,11 @@ class WerewolfHive(Hive):
                     )
 
             if self.has_reached_consensus(consensus_count):
-                self.logger.info("Suggestion accepted")
+                self.logger.info("WEREWOLVES Suggestion accepted")
                 break
             else:
                 self._publish_event("CONSENSUS_NOT_REACHED", "werewolves")
-                self.logger.info("Suggestion not accepted")
+                self.logger.info("WEREWOLVES Suggestion not accepted")
                 consensus_count = 0
 
         return suggestion
