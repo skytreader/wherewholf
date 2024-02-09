@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Type
 from .utils import ValueTieCounter
 
 import logging
+import math
 
 class EndGameState(Enum):
     UNKNOWN_CONDITION = -1
@@ -67,13 +68,20 @@ class Moderator(object):
 
     def __count_votes(self, vote_table: VoteTable) -> List[SanitizedPlayer]:
         vote_counter = ValueTieCounter()
+        # TODO or ceil?
+        majority_vote = math.floor(len(vote_table.keys()) / 2)
+        none_count = 0
         
         for voter in vote_table:
             if vote_table[voter] is not None:
                 vote_counter[vote_table[voter]] += 1
+            else:
+                none_count += 1
 
-        # TODO We might also want to make sure that we have an actual majority.
-        return [t[0] for t in vote_counter.most_common(1)]
+        if none_count > majority_vote:
+            return []
+        else:
+            return [t[0] for t in vote_counter.most_common(1)]
 
     def play(self) -> "EndGameState":
         # Ideally we want this to topo-sort the included characters and then
@@ -111,10 +119,14 @@ class Moderator(object):
                 nomination_map, vote_table = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
                 consensus: List[SanitizedPlayer] = self.__count_votes(vote_table)
 
-                while len(consensus) > 1:
-                    self.logger.info("Tie among %s" % str(consensus))
-                    nomination_map, vote_table = self.whole_game_hive.day_consensus(consensus)
-                    consensus = self.__count_votes(vote_table)
+                while len(consensus) != 1:
+                    if consensus:
+                        self.logger.info("Tie among %s" % str(consensus))
+                        nomination_map, vote_table = self.whole_game_hive.day_consensus(consensus)
+                        consensus = self.__count_votes(vote_table)
+                    else:
+                        nomination_map, vote_table = self.whole_game_hive.day_consensus(self.__batch_sanitize(self.players))
+                        consensus = self.__count_votes(vote_table)
 
                 assert len(consensus) == 1
                 lynched = consensus[0]
