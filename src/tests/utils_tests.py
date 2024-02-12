@@ -29,6 +29,10 @@ class ValueTieCounterTest(unittest.TestCase):
         self.assertEqual(0, minuend["b"])
         self.assertEqual(-3, minuend["c"])
         self.assertEqual(-6, minuend["d"])
+
+    def test_total(self) -> None:
+        test = ValueTieCounter(a=4, b=2, c=0, d=2)
+        self.assertEqual(8, test.total())
     
     def test_update(self) -> None:
         c = ValueTieCounter("which")

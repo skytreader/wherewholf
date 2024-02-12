@@ -402,7 +402,8 @@ class Villager(GameCharacter):
 class Hive(ABC):
     """
     A Hive represents a group of players who need to decide collectively at
-    various points of the game.
+    various points of the game. The Hive should ensure that collective decisions
+    have reached consensus.
     """
 
     def __init__(self, pubsub_broker: Optional[PubSubBroker]=None):
@@ -467,27 +468,31 @@ class Hive(ABC):
         For this Hive (implementation), how many hive members must agree before
         we call a consensus?
         """
-        return int(len(self.players) / 2)
+        alive_player_count = len(self.alive_players)
+        if alive_player_count == 1:
+            return 1
+        else:
+            return int(alive_player_count / 2)
 
     def has_reached_consensus(self, votes: int) -> bool:
         """
         Override this method to implement other majority decision schemes.
         """
-        return votes <= self.consensus
+        return votes >= self.consensus
 
     @abstractmethod
     def night_consensus(self, players: Sequence[SanitizedPlayer]) -> Optional[SanitizedPlayer]:
         """
-        Given the players currently in the game, this hive must decide on their
-        night action for this turn.
+        Given a group of players (such as might be achieved from a nomination
+        process), this hive must decide on their night action for this turn.
         """
         pass
 
     @abstractmethod
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
         """
-        Given the list of players still in the game, this hive must decide on
-        their day action for this turn.
+        Given a group of players (such as might be achieved from a nomincation
+        process), this hive must decide on their day action for this turn.
 
         (FIXME It seems that only the WholeGameHive would really use this.)
         """
@@ -537,25 +542,41 @@ class WholeGameHive(Hive):
                 candidates.add(candidate)
         return list(candidates)
 
+    def __count_votes(self, vote_table: VoteTable) -> List[SanitizedPlayer]:
+        vote_counter = ValueTieCounter()
+        
+        for voter in vote_table:
+            if vote_table[voter] is not None:
+                vote_counter[vote_table[voter]] += 1
+
+        if self.has_reached_consensus(vote_counter.total()):
+            return [t[0] for t in vote_counter.most_common(1)]
+        else:
+            return []
+
     def day_consensus(self, players: Sequence[SanitizedPlayer]) -> Tuple[NominationMap, VoteTable]:
-        initial_candidates: Sequence[Nomination] = self.__gather_nominations(players)
-        nomination_fishing_count = 0
+        vote_table: VoteTable = {}
+        nomination_map: NominationMap = {}
 
-        while not(initial_candidates):
-            if nomination_fishing_count >= WholeGameHive.MAX_LOOP_ITERS:
-                raise GameDeadLockError("No one wants to nominate anyone else! Such pacifists!")
+        while not self.__count_votes(vote_table): 
+            candidates: Sequence[Nomination] = self.__gather_nominations(players)
+            nomination_fishing_count = 0
 
-            initial_candidates = self.__gather_nominations(players)
+            while not candidates:
+                if nomination_fishing_count >= WholeGameHive.MAX_LOOP_ITERS:
+                    raise GameDeadLockError("No one wants to nominate anyone else! Such pacifists!")
 
-            nomination_fishing_count += 1
+                candidates = self.__gather_nominations(players)
+                nomination_fishing_count += 1
 
-        # Build a nomination map for easy reference
-        nomination_map: NominationMap = {
-            nom.nomination: nom.nominated_by for nom in initial_candidates
-        }
+            nomination_map = {
+                nom.nomination: nom.nominated_by for nom in candidates
+            }
+            self.logger.info("The nominations for lynching are %s" % " ".join((str(_) for _ in candidates)))
 
-        self.logger.info("The nominations for lynching are %s" % " ".join((str(_) for _ in initial_candidates)))
-        return (nomination_map, self.__gather_votes(initial_candidates))
+            vote_table = self.__gather_votes(candidates)
+
+        return (nomination_map, vote_table)
 
 
 class WerewolfHive(Hive):
@@ -571,7 +592,7 @@ class WerewolfHive(Hive):
         consensus_count: int = 0
         suggestion: Optional[SanitizedPlayer] = None
 
-        while self.has_reached_consensus(consensus_count):
+        while not self.has_reached_consensus(consensus_count):
             nominant: Player = random.choice(self._get_most_aggressive())
             suggestion = nominant.night_action(players)
             self.logger.info("%s suggested to kill %s" % (nominant, suggestion))
