@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from src.errors import GameDeadLockError
+from src.errors import GameDeadLockError, InvalidGameStateError
 from src.pubsub import PubSubBroker
 from typing import Any, Callable, Dict, Iterable, List, Optional, override, Sequence, Set, Tuple, Type
 from .utils import NominationRecencyTracker, ValueTieCounter, WorldModel
@@ -478,6 +478,8 @@ class Hive(ABC):
         """
         Override this method to implement other majority decision schemes.
         """
+        if votes > len(self.alive_players):
+            raise InvalidGameStateError("Asked for consensus on more votes than possible for this hive. (votes: %s, alive players: %s)" % (votes, len(self.alive_players)))
         return votes >= self.consensus
 
     @abstractmethod

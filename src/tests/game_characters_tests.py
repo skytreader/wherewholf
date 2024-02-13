@@ -223,7 +223,7 @@ class HiveTest(unittest.TestCase):
     def test_singleton_consensus(self):
         SINGLETON_HIVES_CONSENSUS: List[Tuple[Hive, int]] = [
             (
-                make_singleton_hive(_hive), 0
+                make_singleton_hive(_hive), 1
             ) for _hive in (DummyHive(), WerewolfHive(), WholeGameHive())
         ]
         for singleton_hive, singleton_consensus in SINGLETON_HIVES_CONSENSUS:
