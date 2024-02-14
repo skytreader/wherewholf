@@ -601,7 +601,7 @@ class WerewolfHive(Hive):
             self.logger.info("%s suggested to kill %s" % (nominant, suggestion))
             # This is the part where hive members discuss amongst themselves if
             # the nominated villager is killed.
-            for hive_member in self.players:
+            for hive_member in self.alive_players:
                 if suggestion is not None:
                     consensus_count += (
                         1 if hive_member.accept_night_suggestion(suggestion, SanitizedPlayer.sanitize(nominant)) else 0

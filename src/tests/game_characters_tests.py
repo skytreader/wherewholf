@@ -7,6 +7,7 @@ from ..game_characters import (
     GameCharacter, Hive, Nomination, NominationMap, Player, SanitizedPlayer, Villager, VoteTable,
     Werewolf, WerewolfHive, WholeGameHive
 )
+from ..errors import InvalidGameStateError
 from typing import Dict, Optional, Sequence, Set, Tuple
 
 
@@ -229,6 +230,19 @@ class HiveTest(unittest.TestCase):
         for singleton_hive, singleton_consensus in SINGLETON_HIVES_CONSENSUS:
             self.assertEqual(singleton_hive.consensus, singleton_consensus)
             self.assertTrue(singleton_hive.has_reached_consensus(singleton_consensus))
+
+    def test_has_reached_consensus(self):
+        self.assertTrue(
+            self.some_hive.has_reached_consensus(self.some_hive.consensus)
+        )
+        self.assertFalse(
+            self.some_hive.has_reached_consensus(self.some_hive.consensus - 1)
+        )
+        self.assertRaises(
+            InvalidGameStateError,
+            self.some_hive.has_reached_consensus,
+            len(self.some_hive.alive_players) + 1
+        )
 
 
 class WholeGameHiveTest(unittest.TestCase):
