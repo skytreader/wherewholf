@@ -205,8 +205,9 @@ class Player(object):
         """
         Use this for consensus calls during the night.
         """
-        return self.__make_attr_decision(
-            self.suggestibility * suggested_by.persuasiveness
+        return (
+            SanitizedPlayer.is_the_same_player(self, suggested_by) or
+            self.__make_attr_decision(self.suggestibility)
         )
 
     def react_to_lynch_result(
@@ -459,7 +460,7 @@ class Hive(ABC):
         self.dead_players.add(player)
 
     @property
-    def alive_players(self) -> Iterable[Player]:
+    def alive_players(self) -> Set[Player]:
         return set(self.players) - self.dead_players
 
     @property
@@ -601,7 +602,7 @@ class WerewolfHive(Hive):
             # This is the part where hive members discuss amongst themselves if
             # the nominated villager is killed.
             for hive_member in self.players:
-                if hive_member is not nominant and suggestion is not None:
+                if suggestion is not None:
                     consensus_count += (
                         1 if hive_member.accept_night_suggestion(suggestion, SanitizedPlayer.sanitize(nominant)) else 0
                     )
@@ -611,7 +612,7 @@ class WerewolfHive(Hive):
                 break
             else:
                 self._publish_event("CONSENSUS_NOT_REACHED", "werewolves")
-                self.logger.info("WEREWOLVES Suggestion not accepted")
+                self.logger.info("WEREWOLVES Suggestion not accepted (votes: %s)." % consensus_count)
                 consensus_count = 0
 
         return suggestion
