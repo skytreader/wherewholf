@@ -26,7 +26,6 @@ class Player(object):
         aggression: float=0.3,
         suggestibility: float=0.4,
         persuasiveness: float=0.5,
-        hive_affinity: float=0.6,
         nomination_recency: int=3
     ):
         self.name: str = name
@@ -48,7 +47,6 @@ class Player(object):
             nomination_recency
         )
         self.__turn_count: int = 0
-        self.hive_affinity: float = hive_affinity
         self.world_model = WorldModel()
         self.nominated_this_turn: Optional["SanitizedPlayer"] = None
         self.logger = logging.getLogger("Player")
@@ -101,18 +99,6 @@ class Player(object):
     def hive_members(self):
         return self.world_model.get_hive(type(self.role))
 
-    def __pick_from_hive_suggestion(self, nominations: Sequence["Nomination"]) -> Optional["SanitizedPlayer"]:
-        teammate_noms: Set["Nomination"] = set([
-            nom for nom in nominations if (
-                nom.nominated_by in self.hive_members
-            )
-        ])
-
-        if not teammate_noms:
-            return None
-        else:
-            return random.choice(list(teammate_noms)).nomination
-
     def learn_hive_member(self, sanitized_player: "SanitizedPlayer"):
         self.world_model.map(sanitized_player, type(self.role))
     
@@ -152,9 +138,6 @@ class Player(object):
             conviction_vote = self.nominated_this_turn
             self.nominated_this_turn = None
             return conviction_vote
-
-        if self.__make_attr_decision(self.hive_affinity) and self.hive_members:
-            return self.__pick_from_hive_suggestion(nominations)
         
         # Filter out nominations first based on how aggressive the nominators
         # are, coupled with how suggestible this player is.

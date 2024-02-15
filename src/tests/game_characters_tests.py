@@ -103,31 +103,6 @@ class PlayerTest(unittest.TestCase):
             if lynch is not None:
                 self.assertFalse(SanitizedPlayer.is_the_same_player(self.me, lynch))
 
-    def test_hive_affinity(self) -> None:
-        mark: Player = Player("Mark", Werewolf(), hive_affinity=1.0)
-        self.werewolf_hive.add_player(mark)
-        for player in self.werewolf_hive.players:
-            mark.learn_hive_member(SanitizedPlayer.sanitize(player))
-
-        nominations = [
-            Nomination(
-                SanitizedPlayer.sanitize(self.player_map["Chad"]),
-                SanitizedPlayer.sanitize(self.player_map["Shara"])
-            ),
-            Nomination(
-                SanitizedPlayer.sanitize(self.player_map["Gab"]),
-                SanitizedPlayer.sanitize(self.player_map["Chad"])
-            ),
-            Nomination(
-                SanitizedPlayer.sanitize(self.player_map["JE"]),
-                SanitizedPlayer.sanitize(self.player_map["Gab"])
-            )
-        ]
-        self.assertEqual(
-            SanitizedPlayer.sanitize(self.player_map["Chad"]),
-            mark.daytime_behavior(nominations)
-        )
-
     def test_aggression(self) -> None:
         """
         Recall: aggression is the factor which determines how likely a player
