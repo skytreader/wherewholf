@@ -21,6 +21,36 @@ documentation will make note of this decision.
 read memory segments it should not have access to, should this bug exist in the
 Python interpreter. See also: Python's "We are all adults here" philosophy.
 
+### Game Entities
+
+For a player, a Wherewholf game is divided into two phases: night time and day
+time.
+
+**Night time** actions is role-dependent and facilitated largely by the
+moderator. Most notably, during this phase, the player can learn things about
+the game (e.g., other players' roles).
+
+**Day time** is further divided into phases and each player has a set of
+attributes that could influence their behavior during these phases:
+
+1. Nomination phase. Players accuse each other of being a werewolf. A player's
+   `aggression` attribute dictates how likely he is to nominate others.
+2. Discussion phase. In a real-life game, this is where players argue over the
+   nominations, coordinating their votes on who to lynch. In this simulation,
+   each nominated player can advocate for themselves, the efficacy of this is
+   dictated by the `pesuasiveness` attribute (DnD players might also call this
+   _charisma_).
+3. Votation phase. The player with the most votes gets lynched. Players who made
+   a nomination in the first phase will automatically vote for who they
+   nominated. In turn, players who were nominated will _never<sup>1</sup>_ vote
+   for them. For everyone else, their `suggestibility` attribute will dictate
+   how likely will they vote to lynch a nominated player.
+
+At the end of the day time phase, the role of the lynched player is revealed;
+this is information gained by all the players in the game.
+
+<sup>1</sup> This might change upon introduction of the Tanner role.
+
 ## Running
 
 A `requirements.txt` file is included, listing all Python dependencies. This
